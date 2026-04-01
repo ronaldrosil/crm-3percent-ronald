@@ -58,5 +58,26 @@ document.querySelector("button").addEventListener("click", function() {
     alert("Le bouton fonctionne !");
 });
 </script>
+    function ouvrirFormulaire(){
+document.getElementById("formulaire").style.display="block";
+}
+
+function enregistrerProspect(){
+let nom=document.getElementById("nom").value;
+let telephone=document.getElementById("telephone").value;
+
+alert("Prospect enregistré : "+nom+" "+telephone);
+}
+    <div id="formulaire" style="display:none; margin-top:20px;">
+<h2>Nouveau prospect</h2>
+
+<input id="nom" placeholder="Nom"><br><br>
+
+<input id="telephone" placeholder="Téléphone"><br><br>
+
+<textarea id="note" placeholder="Note"></textarea><br><br>
+
+<button onclick="enregistrerProspect()">Enregistrer</button>
+    </div>
 </body>
 </html>
