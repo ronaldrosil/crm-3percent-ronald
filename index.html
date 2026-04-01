@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
 <meta charset="UTF-8">
 <title>3% CRM by Ronald</title>
@@ -8,7 +9,7 @@
 <style>
 
 body{
-font-family:Arial, sans-serif;
+font-family: Arial, sans-serif;
 background:#0f172a;
 color:white;
 text-align:center;
@@ -29,11 +30,24 @@ border-radius:10px;
 margin:10px;
 }
 
-.card{
+.carte{
 background:#1e293b;
 padding:20px;
 border-radius:10px;
 margin-top:20px;
+}
+
+#formulaire{
+display:none;
+margin-top:20px;
+}
+
+input, textarea{
+width:80%;
+padding:10px;
+margin:10px;
+border-radius:8px;
+border:none;
 }
 
 </style>
@@ -42,42 +56,59 @@ margin-top:20px;
 
 <body>
 
-<h1>3% CRM by Ronald</h1>
+<h1>3% CRM par Ronald</h1>
 
-<div class="card">
+<div class="carte">
+
 <p>Bienvenue dans ton CRM intelligent.</p>
 <p>Version 1 en construction.</p>
 
 <button onclick="ouvrirFormulaire()">Ajouter un prospect</button>
+
 <button>Voir mes rappels</button>
+
 <button>Assistant IA</button>
 
 </div>
+
+
+<div id="formulaire">
+
+<h2>Nouveau prospect</h2>
+
+<input id="nom" placeholder="Nom">
+
+<br>
+
+<input id="telephone" placeholder="Téléphone">
+
+<br>
+
+<textarea id="note" placeholder="Note"></textarea>
+
+<br>
+
+<button onclick="enregistrerProspect()">Enregistrer</button>
+
+</div>
+
+
 <script>
-document.querySelector("button").addEventListener("click", function() {
-    alert("Le bouton fonctionne !");
-});
-</script>
-    function ouvrirFormulaire(){
+
+function ouvrirFormulaire(){
 document.getElementById("formulaire").style.display="block";
 }
 
 function enregistrerProspect(){
+
 let nom=document.getElementById("nom").value;
 let telephone=document.getElementById("telephone").value;
 
 alert("Prospect enregistré : "+nom+" "+telephone);
+
 }
-    <div id="formulaire" style="display:none; margin-top:20px;">
-<h2>Nouveau prospect</h2>
 
-<input id="nom" placeholder="Nom"><br><br>
+</script>
 
-<input id="telephone" placeholder="Téléphone"><br><br>
-
-<textarea id="note" placeholder="Note"></textarea><br><br>
-
-<button onclick="enregistrerProspect()">Enregistrer</button>
-    </div>
 </body>
-</html>
+    </html>
