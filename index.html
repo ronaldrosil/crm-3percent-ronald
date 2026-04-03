@@ -28,6 +28,7 @@ color:white;
 font-size:18px;
 border-radius:10px;
 margin:10px;
+cursor:pointer;
 }
 
 .carte{
@@ -93,24 +94,27 @@ border:none;
 </div>
 
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 
 const supabaseUrl = "https://xocsmlqmplnmpcfqrnmz.supabase.co"
 const supabaseKey = "sb_publishable_kQ2NDobwMT9rfJYPYtY0bw_9ZKnf9MU"
 
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey)
+const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey)
+
 
 function ouvrirFormulaire(){
 document.getElementById("formulaire").style.display="block";
 }
 
+
 async function enregistrerProspect(){
 
-let nom = document.getElementById("nom").value;
-let telephone = document.getElementById("telephone").value;
-let note = document.getElementById("note").value;
+const nom = document.getElementById("nom").value
+const telephone = document.getElementById("telephone").value
+const note = document.getElementById("note").value
+
 
 const { data, error } = await supabaseClient
 .from("contacts")
@@ -122,12 +126,24 @@ note: note
 }
 ])
 
+
 if(error){
+
 alert("Erreur : " + error.message)
+
 }else{
+
 alert("Prospect enregistré !")
+
+document.getElementById("nom").value=""
+document.getElementById("telephone").value=""
+document.getElementById("note").value=""
+
 }
 
 }
 
 </script>
+
+</body>
+</html>
