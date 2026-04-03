@@ -93,19 +93,18 @@ border:none;
 </div>
 
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
 <script>
+
 const supabaseUrl = "https://xocsmlqmplnmpcfqrnmz.supabase.co"
 const supabaseKey = "sb_publishable_kQ2NDobwMT9rfJYPYtY0bw_9ZKnf9MU"
 
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey)
+
 function ouvrirFormulaire(){
 document.getElementById("formulaire").style.display="block";
 }
-
-function enregistrerProspect(){
-
-let nom=document.getElementById("nom").value;
-let telephone=document.getElementById("telephone").value;
 
 async function enregistrerProspect(){
 
@@ -131,9 +130,4 @@ alert("Prospect enregistré !")
 
 }
 
-}
-
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-</body>
-    </html>
