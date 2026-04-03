@@ -94,7 +94,10 @@ border:none;
 
 
 <script>
+const supabaseUrl = "https://xocsmlqmplnmpcfqrnmz.supabase.co"
+const supabaseKey = "sb_publishable_kQ2NDobwMT9rfJYPYtY0bw_9ZKnf9MU"
 
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey)
 function ouvrirFormulaire(){
 document.getElementById("formulaire").style.display="block";
 }
@@ -104,11 +107,33 @@ function enregistrerProspect(){
 let nom=document.getElementById("nom").value;
 let telephone=document.getElementById("telephone").value;
 
-alert("Prospect enregistré : "+nom+" "+telephone);
+async function enregistrerProspect(){
+
+let nom = document.getElementById("nom").value;
+let telephone = document.getElementById("telephone").value;
+let note = document.getElementById("note").value;
+
+const { data, error } = await supabaseClient
+.from("contacts")
+.insert([
+{
+nom: nom,
+telephone: telephone,
+note: note
+}
+])
+
+if(error){
+alert("Erreur : " + error.message)
+}else{
+alert("Prospect enregistré !")
+}
+
+}
 
 }
 
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </body>
     </html>
