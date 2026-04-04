@@ -158,12 +158,13 @@ const { data, error } = await supabaseClient
 .from("contacts")
 .select("*")
 .eq("date_rappel", aujourdHui)
+  
 if(error){
 console.log(error)
 return
 }
 
-let zone = document.getElementById("listeProspects")
+const zone = document.getElementById("listeRappels")
 
 zone.innerHTML = ""
 
@@ -176,11 +177,8 @@ zone.innerHTML += `
 
 📞 ${prospect.telephone}<br>
 
-Statut : ${prospect.statut || "prospect"}<br>
-
-Prochaine action : ${prospect.action_prochaine || "non définie"}<br>
+Action : ${prospect.action_prochaine || "non définie"}<br>
 📅 Rappel : ${prospect.date_rappel || "non défini"}<br>
-${prospect.notes || ""}
 
 </div>
 `
