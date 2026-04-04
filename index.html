@@ -23,11 +23,11 @@ color:#3b82f6;
 button{
 background:#f97316;
 border:none;
-padding:15px;
+padding:12px;
 color:white;
-font-size:18px;
-border-radius:10px;
-margin:10px;
+font-size:16px;
+border-radius:8px;
+margin:6px;
 cursor:pointer;
 }
 
@@ -35,7 +35,7 @@ cursor:pointer;
 background:#1e293b;
 padding:20px;
 border-radius:10px;
-margin-top:20px;
+margin-top:15px;
 }
 
 #formulaire{
@@ -46,8 +46,8 @@ margin-top:20px;
 input, textarea{
 width:80%;
 padding:10px;
-margin:10px;
-border-radius:8px;
+margin:8px;
+border-radius:6px;
 border:none;
 }
 
@@ -62,13 +62,12 @@ border:none;
 <div class="carte">
 
 <p>Bienvenue dans ton CRM intelligent.</p>
-<p>Version 1 en construction.</p>
 
 <button onclick="ouvrirFormulaire()">Ajouter un prospect</button>
 
-<button onclick="voirRappels()">Voir mes rappels</button>
+<button onclick="chargerProspects()">Voir tous les prospects</button>
 
-<button>Assistant IA</button>
+<button onclick="voirRappels()">Voir rappels du jour</button>
 
 </div>
 
@@ -102,14 +101,9 @@ border:none;
 </div>
 
 
-<h2>Liste des prospects</h2>
+<h2>Prospects</h2>
 
 <div id="listeProspects"></div>
-
-
-<h2>Rappels du jour</h2>
-
-<div id="listeRappels"></div>
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -124,7 +118,7 @@ const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey)
 
 
 function ouvrirFormulaire(){
-document.getElementById("formulaire").style.display="block";
+document.getElementById("formulaire").style.display="block"
 }
 
 
@@ -137,8 +131,7 @@ const note = document.getElementById("note").value
 const action_prochaine = document.getElementById("action_prochaine").value
 const date_rappel = document.getElementById("date_rappel").value
 
-
-const { data, error } = await supabaseClient
+const { error } = await supabaseClient
 .from("contacts")
 .insert([
 {
@@ -150,30 +143,23 @@ date_rappel: date_rappel
 }
 ])
 
-
 if(error){
 
 alert("Erreur : " + error.message)
 
 }else{
 
-alert("Prospect enregistré !")
+alert("Prospect enregistré")
 
 chargerProspects()
 
-document.getElementById("nom").value=""
-document.getElementById("telephone").value=""
-document.getElementById("note").value=""
-document.getElementById("action_prochaine").value=""
-document.getElementById("date_rappel").value=""
-
 }
 
 }
 
 
 
-async function chargerProspects() {
+async function chargerProspects(){
 
 const { data, error } = await supabaseClient
 .from("contacts")
@@ -186,11 +172,11 @@ return
 
 const zone = document.getElementById("listeProspects")
 
-zone.innerHTML = ""
+zone.innerHTML=""
 
-data.forEach(prospect => {
+data.forEach(prospect=>{
 
-zone.innerHTML += `
+zone.innerHTML +=`
 
 <div class="carte">
 
@@ -204,11 +190,50 @@ Action : ${prospect.action_prochaine || "non définie"}<br>
 
 ${prospect.notes || ""}
 
+<br><br>
+
+<button onclick="modifierProspect('${prospect.id}')">Modifier</button>
+
 </div>
 
 `
 
 })
+
+}
+
+
+
+async function modifierProspect(id){
+
+const nouveauNom = prompt("Nouveau nom")
+const nouveauTel = prompt("Nouveau téléphone")
+const nouvelleAction = prompt("Nouvelle action")
+const nouvelleDate = prompt("Nouvelle date rappel AAAA-MM-JJ")
+const nouvelleNote = prompt("Nouvelle note")
+
+const { error } = await supabaseClient
+.from("contacts")
+.update({
+nom:nouveauNom,
+telephone:nouveauTel,
+action_prochaine:nouvelleAction,
+date_rappel:nouvelleDate,
+notes:nouvelleNote
+})
+.eq("id",id)
+
+if(error){
+
+alert("Erreur modification")
+
+}else{
+
+alert("Prospect modifié")
+
+chargerProspects()
+
+}
 
 }
 
@@ -221,20 +246,20 @@ const aujourdHui = new Date().toISOString().split('T')[0]
 const { data, error } = await supabaseClient
 .from("contacts")
 .select("*")
-.eq("date_rappel", aujourdHui)
+.eq("date_rappel",aujourdHui)
 
 if(error){
 console.log(error)
 return
 }
 
-const zone = document.getElementById("listeRappels")
+const zone = document.getElementById("listeProspects")
 
-zone.innerHTML = ""
+zone.innerHTML=""
 
-data.forEach(prospect => {
+data.forEach(prospect=>{
 
-zone.innerHTML += `
+zone.innerHTML +=`
 
 <div class="carte">
 
