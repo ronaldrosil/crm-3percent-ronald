@@ -144,7 +144,35 @@ document.getElementById("note").value=""
 }
 
 }
+async function chargerProspects() {
 
+const { data, error } = await supabaseClient
+.from("contacts")
+.select("*")
+
+if(error){
+console.log(error)
+return
+}
+
+let zone = document.getElementById("listeProspects")
+
+zone.innerHTML = ""
+
+data.forEach(prospect => {
+
+zone.innerHTML += `
+<div class="carte">
+<strong>${prospect.nom}</strong><br>
+${prospect.telephone}<br>
+${prospect.notes || ""}
+</div>
+`
+
+})
+
+}
+chargerProspects()  
 </script>
 
 </body>
