@@ -89,6 +89,7 @@ border:none;
 
 <br>
 <input id="action_prochaine" placeholder="Prochaine action">
+<input type="date" id="date_rappel">  
 <br>
 <button onclick="enregistrerProspect()">Enregistrer</button>
 
@@ -118,7 +119,7 @@ const nom = document.getElementById("nom").value
 const telephone = document.getElementById("telephone").value
 const note = document.getElementById("note").value
 const action_prochaine = document.getElementById("action_prochaine").value
-
+const date_rappel = document.getElementById("date_rappel").value
 const { data, error } = await supabaseClient
 .from("contacts")
 .insert([
@@ -126,7 +127,8 @@ const { data, error } = await supabaseClient
 nom: nom,
 telephone: telephone,
 notes: note,
-action_prochaine: action_prochaine  
+action_prochaine: action_prochaine,
+date_rappel: date_rappel  
 }
 ])
 
@@ -173,7 +175,7 @@ zone.innerHTML += `
 Statut : ${prospect.statut || "prospect"}<br>
 
 Prochaine action : ${prospect.action_prochaine || "non définie"}<br>
-
+📅 Rappel : ${prospect.date_rappel || "non défini"}<br>
 ${prospect.notes || ""}
 
 </div>
