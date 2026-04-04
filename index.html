@@ -117,7 +117,7 @@ async function enregistrerProspect(){
 const nom = document.getElementById("nom").value
 const telephone = document.getElementById("telephone").value
 const note = document.getElementById("note").value
-
+const action_prochaine = document.getElementById("action_prochaine").value
 
 const { data, error } = await supabaseClient
 .from("contacts")
@@ -125,7 +125,8 @@ const { data, error } = await supabaseClient
 {
 nom: nom,
 telephone: telephone,
-notes: note
+notes: note,
+action_prochaine: action_prochaine  
 }
 ])
 
