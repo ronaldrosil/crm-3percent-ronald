@@ -190,14 +190,16 @@ ${prospect.notes || ""}
 }
 async function voirRappels(){
 
-const aujourdHui = new Date().toISOString().split('T')[0]
-
 const { data, error } = await supabaseClient
 .from("contacts")
 .select("*")
-.eq("date_rappel", aujourdHui)
 
-const zone = document.getElementById("listeRappels")
+if(error){
+console.log(error)
+return
+}
+
+let zone = document.getElementById("listeProspects")
 
 zone.innerHTML = ""
 
