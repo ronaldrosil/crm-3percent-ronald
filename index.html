@@ -1,51 +1,59 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
+
 <meta charset="UTF-8">
-<title>3% CRM by Ronald</title>
+<title>3% CRM Ronald</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 
 body{
-font-family: Arial;
+font-family: Arial, sans-serif;
 background:#0f172a;
 color:white;
 text-align:center;
-padding:20px;
+padding:40px;
 }
 
-h1{color:#3b82f6;}
+h1{
+color:#3b82f6;
+}
 
 button{
-padding:10px;
-margin:5px;
 border:none;
+padding:12px;
+color:white;
+font-size:16px;
 border-radius:8px;
+margin:6px;
 cursor:pointer;
 }
 
-.btn-orange{background:#f97316;color:white;}
-.btn-green{background:#22c55e;color:white;}
-.btn-blue{background:#3b82f6;color:white;}
+.btnAjouter{background:#f97316;}
+.btnTous{background:#3b82f6;}
+.btnRappels{background:#22c55e;}
+.btnWhatsapp{background:#25D366;}
 
 .carte{
 background:#1e293b;
-padding:15px;
-margin:10px;
+padding:20px;
 border-radius:10px;
+margin-top:15px;
 }
 
-input, textarea{
+#formulaire{
+display:none;
+margin-top:20px;
+}
+
+input, textarea, select{
 width:80%;
 padding:10px;
-margin:5px;
+margin:8px;
 border-radius:8px;
 border:none;
 }
-
-#formulaire{display:none;}
 
 </style>
 
@@ -55,33 +63,52 @@ border:none;
 
 <h1>3% CRM Ronald</h1>
 
-<button class="btn-orange" onclick="ouvrirFormulaire()">Ajouter</button>
-<button class="btn-blue" onclick="chargerProspects()">Tous</button>
-<button class="btn-green" onclick="voirRappels()">Rappels</button>
+<button class="btnAjouter" onclick="ouvrirFormulaire()">Ajouter</button>
+<button class="btnTous" onclick="voirProspects()">Tous</button>
+<button class="btnRappels" onclick="voirRappels()">Rappels</button>
 
 <div id="formulaire">
 
-<input id="nom" placeholder="Nom">
-<input id="telephone" placeholder="Téléphone">
-<textarea id="note" placeholder="Note"></textarea>
+<h2>Nouveau prospect</h2>
 
-<input id="pipeline" placeholder="Pipeline">
-<input id="etape" placeholder="Étape">
-<input id="action_prochaine" placeholder="Action">
+<input id="nom" placeholder="Nom">
+
+<br>
+
+<input id="telephone" placeholder="Téléphone">
+
+<br>
+
+<textarea id="notes" placeholder="Notes"></textarea>
+
+<br>
+
+<select id="pipeline">
+<option value="prospect">Prospect</option>
+<option value="client">Client</option>
+<option value="partenaire">Partenaire</option>
+</select>
+
+<br>
+
+<input id="action_prochaine" placeholder="Prochaine action">
+
+<br>
 
 <input type="date" id="date_rappel">
 
-<button onclick="enregistrerProspect()">Valider</button>
+<br>
+
+<button onclick="enregistrerProspect()">Enregistrer</button>
 
 </div>
 
 <h2>Prospects</h2>
+
 <div id="listeProspects"></div>
 
-<h2>Fiche</h2>
-<div id="ficheContact"></div>
+<h2>Rappels du jour</h2>
 
-<h2>Rappels</h2>
 <div id="listeRappels"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -93,159 +120,122 @@ const supabaseKey = "sb_publishable_kQ2NDobwMT9rfJYPYtY0bw_9ZKnf9MU"
 
 const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey)
 
-
 function ouvrirFormulaire(){
 document.getElementById("formulaire").style.display="block"
 }
 
 async function enregistrerProspect(){
 
-let nom = document.getElementById("nom").value
-let telephone = document.getElementById("telephone").value
-let note = document.getElementById("note").value
-let pipeline = document.getElementById("pipeline").value
-let etape = document.getElementById("etape").value
-let action = document.getElementById("action_prochaine").value
-let date = document.getElementById("date_rappel").value
+const nom = document.getElementById("nom").value
+const telephone = document.getElementById("telephone").value
+const notes = document.getElementById("notes").value
+const pipeline = document.getElementById("pipeline").value
+const action_prochaine = document.getElementById("action_prochaine").value
+const date_rappel = document.getElementById("date_rappel").value
 
-const { data, error } = await supabase
+const { error } = await supabaseClient
 .from("contacts")
-.insert([{
-nom,
-telephone,
-notes: note,
-pipeline,
-etape,
-action_prochaine: action,
-date_rappel: date
-}])
+.insert([
+{
+nom: nom,
+telephone: telephone,
+notes: notes,
+pipeline: pipeline,
+action_prochaine: action_prochaine,
+date_rappel: date_rappel
+}
+])
 
 if(error){
-alert(error.message)
+alert("Erreur : " + error.message)
 }else{
-alert("Ajout OK")
-chargerProspects()
-}
+
+alert("Prospect enregistré")
+
+document.getElementById("nom").value=""
+document.getElementById("telephone").value=""
+document.getElementById("notes").value=""
+
+voirProspects()
 
 }
 
-async function chargerProspects(){
+}
 
-const { data } = await supabase
+async function voirProspects(){
+
+const { data, error } = await supabaseClient
 .from("contacts")
 .select("*")
 .order("created_at",{ascending:false})
 
+if(error){
+console.log(error)
+return
+}
+
 let zone = document.getElementById("listeProspects")
 zone.innerHTML=""
 
-data.forEach(p=>{
+data.forEach(p => {
 
-zone.innerHTML+=`
+zone.innerHTML += `
 
 <div class="carte">
 
-<b>${p.nom}</b><br>
+<strong>${p.nom}</strong><br>
+
 📞 ${p.telephone}<br>
-${p.pipeline || ""} / ${p.etape || ""}<br>
 
-<button onclick="fiche('${p.id}')">Fiche</button>
-<button onclick="modifier('${p.id}')">Modifier</button>
-<button onclick="whatsapp('${p.telephone}')">WhatsApp</button>
+Pipeline : ${p.pipeline || ""}<br>
+
+Action : ${p.action_prochaine || ""}<br>
+
+📅 Rappel : ${p.date_rappel || ""}<br>
+
+<button class="btnWhatsapp"
+onclick="envoyerWhatsapp('${p.telephone}','Bonjour ${p.nom}')">
+
+WhatsApp
+
+</button>
 
 </div>
 
 `
 
 })
-
-}
-
-async function fiche(id){
-
-const { data: c } = await supabase
-.from("contacts")
-.select("*")
-.eq("id",id)
-.single()
-
-const { data: i } = await supabase
-.from("interactions")
-.select("*")
-.eq("contact_id",id)
-.order("date_interaction",{ascending:false})
-
-let hist=""
-
-i.forEach(x=>{
-hist+=<div class="carte">${x.note}</div>
-})
-
-document.getElementById("ficheContact").innerHTML=`
-
-<div class="carte">
-
-<h3>${c.nom}</h3>
-
-📞 ${c.telephone}<br>
-${c.pipeline}<br>
-${c.etape}<br>
-${c.action_prochaine}<br>
-${c.date_rappel}<br>
-
-<h4>Historique</h4>
-
-${hist}
-
-</div>
-
-`
-
-}
-
-async function modifier(id){
-
-let note = prompt("Nouvelle note")
-
-await supabase
-.from("contacts")
-.update({notes: note})
-.eq("id",id)
-
-await supabase
-.from("interactions")
-.insert([{contact_id:id,note:note}])
-
-chargerProspects()
-
-}
-
-function whatsapp(num){
-
-window.open(https://wa.me/${num})
 
 }
 
 async function voirRappels(){
 
-let today = new Date().toISOString().split("T")[0]
+const aujourdHui = new Date().toISOString().split('T')[0]
 
-const { data } = await supabase
+const { data, error } = await supabaseClient
 .from("contacts")
 .select("*")
-.eq("date_rappel",today)
+.eq("date_rappel", aujourdHui)
+
+if(error){
+console.log(error)
+return
+}
 
 let zone = document.getElementById("listeRappels")
 zone.innerHTML=""
 
-data.forEach(p=>{
+data.forEach(p => {
 
-zone.innerHTML+=`
+zone.innerHTML += `
 
 <div class="carte">
 
-${p.nom}<br>
-${p.action_prochaine}<br>
+<strong>${p.nom}</strong><br>
+
+📞 ${p.telephone}<br>
+
+Action : ${p.action_prochaine || ""}
 
 </div>
 
@@ -255,7 +245,18 @@ ${p.action_prochaine}<br>
 
 }
 
-chargerProspects()
+function envoyerWhatsapp(numero,message){
+
+numero = numero.replace(/\D/g,'')
+
+window.open(
+"https://wa.me/"+numero+"?text="+encodeURIComponent(message),
+"_blank"
+)
+
+}
+
+voirProspects()
 
 </script>
 
