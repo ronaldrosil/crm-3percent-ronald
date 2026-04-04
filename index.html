@@ -202,4 +202,170 @@ const {data,error}=await supabaseClient
 .select("*")
 
 if(error){
-console.log
+console.log(error)
+return
+}
+
+const zone=document.getElementById("listeProspects")
+zone.innerHTML=""
+
+const aujourd=new Date().toISOString().split('T')[0]
+
+data.forEach(prospect=>{
+
+let classe="futur"
+
+if(prospect.date_rappel){
+
+if(prospect.date_rappel<aujourd){
+
+classe="retard"
+
+}else if(prospect.date_rappel===aujourd){
+
+classe="aujourdhui"
+
+}
+
+}
+
+zone.innerHTML+=`
+
+<div class="carte ${classe}">
+
+<strong>${prospect.nom}</strong><br>
+
+📞 ${prospect.telephone}<br>
+
+Action : ${prospect.action_prochaine||"non définie"}<br>
+
+📅 Rappel : ${prospect.date_rappel||"non défini"}<br>
+
+${prospect.notes||""}
+
+<br><br>
+
+<button onclick="modifierProspect('${prospect.id}')">Modifier</button>
+
+<button onclick="actionFaite('${prospect.id}')">Action faite</button>
+
+<a href="https://wa.me/${prospect.telephone}" target="_blank">
+
+<button style="background:#25D366">WhatsApp</button>
+
+</a>
+
+</div>
+
+`
+
+})
+
+}
+
+async function modifierProspect(id){
+
+const {data,error}=await supabaseClient
+.from("contacts")
+.select("*")
+.eq("id",id)
+.single()
+
+if(error){
+alert("Erreur chargement")
+return
+}
+
+prospectEnEdition=id
+
+document.getElementById("formulaire").style.display="block"
+
+document.getElementById("nom").value=data.nom
+document.getElementById("telephone").value=data.telephone
+document.getElementById("note").value=data.notes||""
+document.getElementById("action_prochaine").value=data.action_prochaine||""
+document.getElementById("date_rappel").value=data.date_rappel||""
+
+}
+
+async function actionFaite(id){
+
+const nouvelleDate=new Date()
+
+nouvelleDate.setDate(nouvelleDate.getDate()+3)
+
+const date=nouvelleDate.toISOString().split('T')[0]
+
+const {error}=await supabaseClient
+.from("contacts")
+.update({
+action_prochaine:"Relancer",
+date_rappel:date
+})
+.eq("id",id)
+
+if(error){
+
+alert(error.message)
+
+}else{
+
+alert("Action enregistrée, relance programmée")
+
+chargerProspects()
+
+}
+
+}
+
+async function voirRappels(){
+
+const aujourd=new Date().toISOString().split('T')[0]
+
+const {data,error}=await supabaseClient
+.from("contacts")
+.select("*")
+.eq("date_rappel",aujourd)
+
+if(error){
+console.log(error)
+return
+}
+
+const zone=document.getElementById("listeProspects")
+zone.innerHTML=""
+
+data.forEach(prospect=>{
+
+zone.innerHTML+=`
+
+<div class="carte aujourdhui">
+
+<strong>${prospect.nom}</strong><br>
+
+📞 ${prospect.telephone}<br>
+
+Action : ${prospect.action_prochaine||"non définie"}<br>
+
+📅 Rappel : ${prospect.date_rappel||"non défini"}<br>
+
+<a href="https://wa.me/${prospect.telephone}" target="_blank">
+
+<button style="background:#25D366">WhatsApp</button>
+
+</a>
+
+</div>
+
+`
+
+})
+
+}
+
+chargerProspects()
+
+</script>
+
+</body>
+</html>
