@@ -9,47 +9,43 @@
 <style>
 
 body{
-font-family: Arial, sans-serif;
+font-family: Arial;
 background:#0f172a;
 color:white;
 text-align:center;
-padding:40px;
+padding:20px;
 }
 
-h1{
-color:#3b82f6;
-}
+h1{color:#3b82f6;}
 
 button{
-background:#f97316;
+padding:10px;
+margin:5px;
 border:none;
-padding:12px;
-color:white;
-font-size:16px;
 border-radius:8px;
-margin:6px;
 cursor:pointer;
 }
 
+.btn-orange{background:#f97316;color:white;}
+.btn-green{background:#22c55e;color:white;}
+.btn-blue{background:#3b82f6;color:white;}
+
 .carte{
 background:#1e293b;
-padding:20px;
+padding:15px;
+margin:10px;
 border-radius:10px;
-margin-top:20px;
-}
-
-#formulaire{
-display:none;
-margin-top:20px;
 }
 
 input, textarea{
 width:80%;
 padding:10px;
-margin:8px;
+margin:5px;
 border-radius:8px;
 border:none;
 }
+
+#formulaire{display:none;}
 
 </style>
 
@@ -57,68 +53,36 @@ border:none;
 
 <body>
 
-<h1>3% CRM par Ronald</h1>
+<h1>3% CRM Ronald</h1>
 
-<div class="carte">
-
-<p>Bienvenue dans ton CRM intelligent</p>
-
-<button onclick="ouvrirFormulaire()">Ajouter un prospect</button>
-<button onclick="chargerProspects()">Voir tous les prospects</button>
-<button onclick="voirRappels()">Voir rappels du jour</button>
-
-</div>
-
+<button class="btn-orange" onclick="ouvrirFormulaire()">Ajouter</button>
+<button class="btn-blue" onclick="chargerProspects()">Tous</button>
+<button class="btn-green" onclick="voirRappels()">Rappels</button>
 
 <div id="formulaire">
 
-<h2>Nouveau prospect</h2>
-
 <input id="nom" placeholder="Nom">
-
-<br>
-
 <input id="telephone" placeholder="Téléphone">
-
-<br>
-
 <textarea id="note" placeholder="Note"></textarea>
 
-<br>
-
-<input id="pipeline" placeholder="Pipeline (business / produit / partenaire)">
-
-<br>
-
+<input id="pipeline" placeholder="Pipeline">
 <input id="etape" placeholder="Étape">
-
-<br>
-
-<input id="action_prochaine" placeholder="Prochaine action">
-
-<br>
+<input id="action_prochaine" placeholder="Action">
 
 <input type="date" id="date_rappel">
 
-<br>
-
-<button onclick="enregistrerProspect()">Enregistrer</button>
+<button onclick="enregistrerProspect()">Valider</button>
 
 </div>
 
-
-<h2>Liste des prospects</h2>
-
+<h2>Prospects</h2>
 <div id="listeProspects"></div>
 
-<h2>Fiche contact</h2>
-
+<h2>Fiche</h2>
 <div id="ficheContact"></div>
 
-<h2>Rappels du jour</h2>
-
+<h2>Rappels</h2>
 <div id="listeRappels"></div>
-
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -127,195 +91,161 @@ border:none;
 const supabaseUrl = "https://xocsmlqmplnmpcfqrnmz.supabase.co"
 const supabaseKey = "sb_publishable_kQ2NDobwMT9rfJYPYtY0bw_9ZKnf9MU"
 
-const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey)
-
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
 
 
 function ouvrirFormulaire(){
-document.getElementById("formulaire").style.display="block";
+document.getElementById("formulaire").style.display="block"
 }
-
-
 
 async function enregistrerProspect(){
 
-const nom = document.getElementById("nom").value
-const telephone = document.getElementById("telephone").value
-const note = document.getElementById("note").value
-const pipeline = document.getElementById("pipeline").value
-const etape = document.getElementById("etape").value
-const action_prochaine = document.getElementById("action_prochaine").value
-const date_rappel = document.getElementById("date_rappel").value
+let nom = document.getElementById("nom").value
+let telephone = document.getElementById("telephone").value
+let note = document.getElementById("note").value
+let pipeline = document.getElementById("pipeline").value
+let etape = document.getElementById("etape").value
+let action = document.getElementById("action_prochaine").value
+let date = document.getElementById("date_rappel").value
 
-
-const { data, error } = await supabaseClient
+const { data, error } = await supabase
 .from("contacts")
-.insert([
-{
-nom: nom,
-telephone: telephone,
+.insert([{
+nom,
+telephone,
 notes: note,
-pipeline: pipeline,
-etape: etape,
-action_prochaine: action_prochaine,
-date_rappel: date_rappel
-}
-])
+pipeline,
+etape,
+action_prochaine: action,
+date_rappel: date
+}])
 
 if(error){
-
-alert("Erreur : " + error.message)
-
+alert(error.message)
 }else{
+alert("Ajout OK")
+chargerProspects()
+}
 
-alert("Prospect enregistré")
+}
+
+async function chargerProspects(){
+
+const { data } = await supabase
+.from("contacts")
+.select("*")
+.order("created_at",{ascending:false})
+
+let zone = document.getElementById("listeProspects")
+zone.innerHTML=""
+
+data.forEach(p=>{
+
+zone.innerHTML+=`
+
+<div class="carte">
+
+<b>${p.nom}</b><br>
+📞 ${p.telephone}<br>
+${p.pipeline || ""} / ${p.etape || ""}<br>
+
+<button onclick="fiche('${p.id}')">Fiche</button>
+<button onclick="modifier('${p.id}')">Modifier</button>
+<button onclick="whatsapp('${p.telephone}')">WhatsApp</button>
+
+</div>
+
+`
+
+})
+
+}
+
+async function fiche(id){
+
+const { data: c } = await supabase
+.from("contacts")
+.select("*")
+.eq("id",id)
+.single()
+
+const { data: i } = await supabase
+.from("interactions")
+.select("*")
+.eq("contact_id",id)
+.order("date_interaction",{ascending:false})
+
+let hist=""
+
+i.forEach(x=>{
+hist+=<div class="carte">${x.note}</div>
+})
+
+document.getElementById("ficheContact").innerHTML=`
+
+<div class="carte">
+
+<h3>${c.nom}</h3>
+
+📞 ${c.telephone}<br>
+${c.pipeline}<br>
+${c.etape}<br>
+${c.action_prochaine}<br>
+${c.date_rappel}<br>
+
+<h4>Historique</h4>
+
+${hist}
+
+</div>
+
+`
+
+}
+
+async function modifier(id){
+
+let note = prompt("Nouvelle note")
+
+await supabase
+.from("contacts")
+.update({notes: note})
+.eq("id",id)
+
+await supabase
+.from("interactions")
+.insert([{contact_id:id,note:note}])
 
 chargerProspects()
 
 }
 
-}
+function whatsapp(num){
 
-
-
-async function ajouterInteraction(contactId, texte){
-
-const { data, error } = await supabaseClient
-.from("interactions")
-.insert([
-{
-contact_id: contactId,
-note: texte
-}
-])
+window.open(https://wa.me/${num})
 
 }
-
-
-
-async function chargerProspects(){
-
-const { data, error } = await supabaseClient
-.from("contacts")
-.select("*")
-.order("created_at", { ascending: false })
-
-if(error){
-console.log(error)
-return
-}
-
-let zone = document.getElementById("listeProspects")
-
-zone.innerHTML = ""
-
-data.forEach(prospect => {
-
-zone.innerHTML += `
-
-<div class="carte">
-
-<strong>${prospect.nom}</strong><br>
-
-📞 ${prospect.telephone}<br>
-
-Pipeline : ${prospect.pipeline || ""}<br>
-Étape : ${prospect.etape || ""}<br>
-
-<button onclick="ouvrirFicheContact('${prospect.id}')">
-Voir fiche
-</button>
-
-</div>
-
-`
-
-})
-
-}
-
-
-
-async function ouvrirFicheContact(contactId){
-
-const { data: contact } = await supabaseClient
-.from("contacts")
-.select("*")
-.eq("id", contactId)
-.single()
-
-
-const { data: interactions } = await supabaseClient
-.from("interactions")
-.select("*")
-.eq("contact_id", contactId)
-.order("date_interaction", { ascending: false })
-
-
-let historique = ""
-
-interactions.forEach(interaction => {
-
-historique += `
-<div class="carte">
-📅 ${new Date(interaction.date_interaction).toLocaleString()} <br>
-${interaction.note}
-</div>
-`
-
-})
-
-
-document.getElementById("ficheContact").innerHTML = `
-
-<div class="carte">
-
-<h2>${contact.nom}</h2>
-
-📞 ${contact.telephone}<br><br>
-
-Pipeline : ${contact.pipeline || ""}<br>
-Étape : ${contact.etape || ""}<br>
-Action : ${contact.action_prochaine || ""}<br>
-Rappel : ${contact.date_rappel || ""}<br><br>
-
-<h3>Historique</h3>
-
-${historique}
-
-</div>
-
-`
-
-}
-
-
 
 async function voirRappels(){
 
-const aujourdHui = new Date().toISOString().split('T')[0]
+let today = new Date().toISOString().split("T")[0]
 
-const { data } = await supabaseClient
+const { data } = await supabase
 .from("contacts")
 .select("*")
-.eq("date_rappel", aujourdHui)
+.eq("date_rappel",today)
 
 let zone = document.getElementById("listeRappels")
+zone.innerHTML=""
 
-zone.innerHTML = ""
+data.forEach(p=>{
 
-data.forEach(prospect => {
-
-zone.innerHTML += `
+zone.innerHTML+=`
 
 <div class="carte">
 
-<strong>${prospect.nom}</strong><br>
-
-📞 ${prospect.telephone}<br>
-
-Action : ${prospect.action_prochaine || ""}<br>
-📅 ${prospect.date_rappel || ""}
+${p.nom}<br>
+${p.action_prochaine}<br>
 
 </div>
 
@@ -324,8 +254,6 @@ Action : ${prospect.action_prochaine || ""}<br>
 })
 
 }
-
-
 
 chargerProspects()
 
