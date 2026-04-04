@@ -163,9 +163,15 @@ data.forEach(prospect => {
 
 zone.innerHTML += `
 <div class="carte">
+
 <strong>${prospect.nom}</strong><br>
-${prospect.telephone}<br>
+
+📞 ${prospect.telephone}<br>
+
+Statut : ${prospect.statut || "prospect"}<br>
+
 ${prospect.notes || ""}
+
 </div>
 `
 
