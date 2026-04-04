@@ -86,7 +86,7 @@ border:none;
 
 <div id="formulaire">
 
-<h2>Nouveau prospect</h2>
+<h2>Prospect</h2>
 
 <input id="nom" placeholder="Nom">
 
@@ -128,11 +128,21 @@ const supabaseKey="sb_publishable_kQ2NDobwMT9rfJYPYtY0bw_9ZKnf9MU"
 
 const supabaseClient=window.supabase.createClient(supabaseUrl,supabaseKey)
 
+let prospectEnEdition=null
+
 
 
 function ouvrirFormulaire(){
 
 document.getElementById("formulaire").style.display="block"
+
+document.getElementById("nom").value=""
+document.getElementById("telephone").value=""
+document.getElementById("note").value=""
+document.getElementById("action_prochaine").value=""
+document.getElementById("date_rappel").value=""
+
+prospectEnEdition=null
 
 }
 
@@ -150,6 +160,46 @@ const action=document.getElementById("action_prochaine").value
 
 const date=document.getElementById("date_rappel").value
 
+
+if(prospectEnEdition){
+
+const{error}=await supabaseClient
+
+.from("contacts")
+
+.update({
+
+nom:nom,
+
+telephone:telephone,
+
+notes:note,
+
+action_prochaine:action,
+
+date_rappel:date
+
+})
+
+.eq("id",prospectEnEdition)
+
+
+prospectEnEdition=null
+
+
+if(error){
+
+alert(error.message)
+
+}else{
+
+alert("Prospect modifié")
+
+chargerProspects()
+
+}
+
+}else{
 
 const{error}=await supabaseClient
 
@@ -183,6 +233,8 @@ alert(error.message)
 alert("Prospect enregistré")
 
 chargerProspects()
+
+}
 
 }
 
@@ -274,49 +326,36 @@ ${prospect.notes||""}
 
 async function modifierProspect(id){
 
-const nom=prompt("Nouveau nom")
-
-const tel=prompt("Nouveau téléphone")
-
-const action=prompt("Nouvelle action")
-
-const date=prompt("Nouvelle date rappel AAAA-MM-JJ")
-
-const note=prompt("Nouvelle note")
-
-
-const{error}=await supabaseClient
+const{data,error}=await supabaseClient
 
 .from("contacts")
 
-.update({
-
-nom:nom,
-
-telephone:tel,
-
-action_prochaine:action,
-
-date_rappel:date,
-
-notes:note
-
-})
+.select("*")
 
 .eq("id",id)
+
+.single()
 
 
 if(error){
 
-alert("Erreur modification")
+alert("Erreur chargement")
 
-}else{
-
-alert("Prospect modifié")
-
-chargerProspects()
+return
 
 }
+
+
+prospectEnEdition=id
+
+
+document.getElementById("formulaire").style.display="block"
+
+document.getElementById("nom").value=data.nom
+document.getElementById("telephone").value=data.telephone
+document.getElementById("note").value=data.notes||""
+document.getElementById("action_prochaine").value=data.action_prochaine||""
+document.getElementById("date_rappel").value=data.date_rappel||""
 
 }
 
