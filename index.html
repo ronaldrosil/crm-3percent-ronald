@@ -99,6 +99,10 @@ border:none;
 
 <br>
 
+<button type="button" onclick="dicterNote()">🎤 Dicter</button>
+
+<br>
+
 <label>Pipeline</label>
 
 <select id="pipeline">
@@ -163,6 +167,38 @@ document.getElementById("action_prochaine").value=""
 document.getElementById("date_rappel").value=""
 
 prospectEnEdition=null
+
+}
+
+function dicterNote(){
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+
+if(!SpeechRecognition){
+alert("La dictée vocale n'est pas supportée sur ce navigateur")
+return
+}
+
+const recognition = new SpeechRecognition()
+
+recognition.lang="fr-FR"
+recognition.interimResults=false
+
+recognition.start()
+
+recognition.onresult=function(event){
+
+const texte=event.results[0][0].transcript
+
+const zoneNote=document.getElementById("note")
+
+zoneNote.value=zoneNote.value+" "+texte
+
+}
+
+recognition.onerror=function(){
+alert("Erreur dictée vocale")
+}
 
 }
 
@@ -283,9 +319,7 @@ ${prospect.notes||""}
 <button onclick="actionFaite('${prospect.id}')">Action faite</button>
 
 <a href="https://wa.me/${prospect.telephone}" target="_blank">
-
 <button style="background:#25D366">WhatsApp</button>
-
 </a>
 
 </div>
@@ -384,9 +418,7 @@ Action : ${prospect.action_prochaine||""}<br>
 📅 Rappel : ${prospect.date_rappel||""}<br>
 
 <a href="https://wa.me/${prospect.telephone}" target="_blank">
-
 <button style="background:#25D366">WhatsApp</button>
-
 </a>
 
 </div>
