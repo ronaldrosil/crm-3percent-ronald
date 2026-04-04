@@ -99,7 +99,7 @@ border:none;
 <div id="listeProspects"></div>
 <h2>Rappels du jour</h2>
 
-<div id="listeRappels"></div
+<div id="listeRappels"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -152,10 +152,12 @@ document.getElementById("note").value=""
 }
 async function chargerProspects() {
 
+const aujourdHui = new Date().toISOString().split('T')[0]
+  
 const { data, error } = await supabaseClient
 .from("contacts")
 .select("*")
-
+.eq("date_rappel", aujourdHui)
 if(error){
 console.log(error)
 return
