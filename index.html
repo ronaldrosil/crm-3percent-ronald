@@ -4,9 +4,7 @@
 <head>
 
 <meta charset="UTF-8">
-
 <title>3% CRM by Ronald</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -94,7 +92,7 @@ border:none;
 
 <br>
 
-<input id="telephone" placeholder="Téléphone">
+<input id="telephone" placeholder="Téléphone (ex: 596696123456)">
 
 <br>
 
@@ -220,7 +218,6 @@ data.forEach(prospect=>{
 
 let classe="futur"
 
-
 const aujourd=new Date().toISOString().split('T')[0]
 
 
@@ -258,6 +255,12 @@ ${prospect.notes||""}
 <br><br>
 
 <button onclick="modifierProspect('${prospect.id}')">Modifier</button>
+
+<a href="https://wa.me/${prospect.telephone}" target="_blank">
+
+<button style="background:#25D366">WhatsApp</button>
+
+</a>
 
 </div>
 
@@ -360,6 +363,12 @@ zone.innerHTML+=`
 Action : ${prospect.action_prochaine||"non définie"}<br>
 
 📅 Rappel : ${prospect.date_rappel||"non défini"}<br>
+
+<a href="https://wa.me/${prospect.telephone}" target="_blank">
+
+<button style="background:#25D366">WhatsApp</button>
+
+</a>
 
 </div>
 
