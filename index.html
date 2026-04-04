@@ -66,7 +66,7 @@ border:none;
 
 <button onclick="ouvrirFormulaire()">Ajouter un prospect</button>
 
-<button>Voir mes rappels</button>
+<button onclick="voirRappels()">Voir mes rappels</button>
 
 <button>Assistant IA</button>
 
@@ -97,7 +97,9 @@ border:none;
 <h2>Liste des prospects</h2>
 
 <div id="listeProspects"></div>
+<h2>Rappels du jour</h2>
 
+<div id="listeRappels"></div
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -184,6 +186,38 @@ ${prospect.notes || ""}
 })
 
 }
+async function voirRappels(){
+
+const aujourdHui = new Date().toISOString().split('T')[0]
+
+const { data, error } = await supabaseClient
+.from("contacts")
+.select("*")
+.eq("date_rappel", aujourdHui)
+
+const zone = document.getElementById("listeRappels")
+
+zone.innerHTML = ""
+
+data.forEach(prospect => {
+
+zone.innerHTML += `
+
+<div class="carte">
+
+<strong>${prospect.nom}</strong><br>
+
+📞 ${prospect.telephone}<br>
+
+Action : ${prospect.action_prochaine || "non définie"}<br>
+📅 Rappel : ${prospect.date_rappel || "non défini"}<br>
+</div>
+
+`
+
+})
+
+}  
 chargerProspects()  
 </script>
 
