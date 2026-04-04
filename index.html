@@ -24,7 +24,7 @@ color:#3b82f6;
 button{
 background:#f97316;
 border:none;
-padding:12px;
+padding:10px;
 color:white;
 border-radius:8px;
 margin:6px;
@@ -83,7 +83,6 @@ border:none;
 
 </div>
 
-
 <div id="formulaire">
 
 <h2>Prospect</h2>
@@ -92,7 +91,7 @@ border:none;
 
 <br>
 
-<input id="telephone" placeholder="Téléphone (ex: 596696123456)">
+<input id="telephone" placeholder="Téléphone (ex : 596696123456)">
 
 <br>
 
@@ -112,25 +111,20 @@ border:none;
 
 </div>
 
-
 <h2>Prospects</h2>
 
 <div id="listeProspects"></div>
-
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 
 const supabaseUrl="https://xocsmlqmplnmpcfqrnmz.supabase.co"
-
 const supabaseKey="sb_publishable_kQ2NDobwMT9rfJYPYtY0bw_9ZKnf9MU"
 
 const supabaseClient=window.supabase.createClient(supabaseUrl,supabaseKey)
 
 let prospectEnEdition=null
-
-
 
 function ouvrirFormulaire(){
 
@@ -146,283 +140,66 @@ prospectEnEdition=null
 
 }
 
-
-
 async function enregistrerProspect(){
 
 const nom=document.getElementById("nom").value
-
 const telephone=document.getElementById("telephone").value
-
 const note=document.getElementById("note").value
-
 const action=document.getElementById("action_prochaine").value
-
 const date=document.getElementById("date_rappel").value
-
 
 if(prospectEnEdition){
 
-const{error}=await supabaseClient
-
+const {error}=await supabaseClient
 .from("contacts")
-
 .update({
-
 nom:nom,
-
 telephone:telephone,
-
 notes:note,
-
 action_prochaine:action,
-
 date_rappel:date
-
 })
-
 .eq("id",prospectEnEdition)
-
 
 prospectEnEdition=null
 
-
 if(error){
-
 alert(error.message)
-
 }else{
-
 alert("Prospect modifié")
-
 chargerProspects()
-
 }
 
 }else{
 
-const{error}=await supabaseClient
-
+const {error}=await supabaseClient
 .from("contacts")
-
 .insert([
-
 {
-
 nom:nom,
-
 telephone:telephone,
-
 notes:note,
-
 action_prochaine:action,
-
 date_rappel:date
-
 }
-
 ])
 
-
 if(error){
-
 alert(error.message)
-
 }else{
-
 alert("Prospect enregistré")
-
 chargerProspects()
-
 }
 
 }
 
 }
-
-
 
 async function chargerProspects(){
 
-const{data,error}=await supabaseClient
-
+const {data,error}=await supabaseClient
 .from("contacts")
-
 .select("*")
 
-
 if(error){
-
-console.log(error)
-
-return
-
-}
-
-
-const zone=document.getElementById("listeProspects")
-
-zone.innerHTML=""
-
-
-data.forEach(prospect=>{
-
-
-let classe="futur"
-
-const aujourd=new Date().toISOString().split('T')[0]
-
-
-if(prospect.date_rappel){
-
-if(prospect.date_rappel<aujourd){
-
-classe="retard"
-
-}
-
-else if(prospect.date_rappel===aujourd){
-
-classe="aujourdhui"
-
-}
-
-}
-
-
-zone.innerHTML+=`
-
-<div class="carte ${classe}">
-
-<strong>${prospect.nom}</strong><br>
-
-📞 ${prospect.telephone}<br>
-
-Action : ${prospect.action_prochaine||"non définie"}<br>
-
-📅 Rappel : ${prospect.date_rappel||"non défini"}<br>
-
-${prospect.notes||""}
-
-<br><br>
-
-<button onclick="modifierProspect('${prospect.id}')">Modifier</button>
-
-<a href="https://wa.me/${prospect.telephone}" target="_blank">
-
-<button style="background:#25D366">WhatsApp</button>
-
-</a>
-
-</div>
-
-`
-
-})
-
-}
-
-
-
-async function modifierProspect(id){
-
-const{data,error}=await supabaseClient
-
-.from("contacts")
-
-.select("*")
-
-.eq("id",id)
-
-.single()
-
-
-if(error){
-
-alert("Erreur chargement")
-
-return
-
-}
-
-
-prospectEnEdition=id
-
-
-document.getElementById("formulaire").style.display="block"
-
-document.getElementById("nom").value=data.nom
-document.getElementById("telephone").value=data.telephone
-document.getElementById("note").value=data.notes||""
-document.getElementById("action_prochaine").value=data.action_prochaine||""
-document.getElementById("date_rappel").value=data.date_rappel||""
-
-}
-
-
-
-async function voirRappels(){
-
-const aujourd=new Date().toISOString().split('T')[0]
-
-
-const{data,error}=await supabaseClient
-
-.from("contacts")
-
-.select("*")
-
-.eq("date_rappel",aujourd)
-
-
-if(error){
-
-console.log(error)
-
-return
-
-}
-
-
-const zone=document.getElementById("listeProspects")
-
-zone.innerHTML=""
-
-
-data.forEach(prospect=>{
-
-zone.innerHTML+=`
-
-<div class="carte aujourdhui">
-
-<strong>${prospect.nom}</strong><br>
-
-📞 ${prospect.telephone}<br>
-
-Action : ${prospect.action_prochaine||"non définie"}<br>
-
-📅 Rappel : ${prospect.date_rappel||"non défini"}<br>
-
-<a href="https://wa.me/${prospect.telephone}" target="_blank">
-
-<button style="background:#25D366">WhatsApp</button>
-
-</a>
-
-</div>
-
-`
-
-})
-
-}
-
-
-
-chargerProspects()
-
-</script>
-
-</body>
-
-</html>
+console.log
