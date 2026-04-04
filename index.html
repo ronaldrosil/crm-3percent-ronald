@@ -55,7 +55,7 @@ display:none;
 margin-top:20px;
 }
 
-input,textarea{
+input,textarea,select{
 width:80%;
 padding:10px;
 margin:8px;
@@ -91,11 +91,35 @@ border:none;
 
 <br>
 
-<input id="telephone" placeholder="Téléphone (ex : 596696123456)">
+<input id="telephone" placeholder="Téléphone">
 
 <br>
 
 <textarea id="note" placeholder="Note"></textarea>
+
+<br>
+
+<label>Pipeline</label>
+
+<select id="pipeline">
+<option value="business">Business</option>
+<option value="produit">Produit</option>
+</select>
+
+<br>
+
+<label>Étape</label>
+
+<select id="etape">
+<option value="prospection">Prospection</option>
+<option value="contact">Contact</option>
+<option value="appel">Appel</option>
+<option value="presentation">Présentation</option>
+<option value="relance">Relance</option>
+<option value="balance_test">Balance test</option>
+<option value="test_produit">Test produit</option>
+<option value="suivi">Suivi</option>
+</select>
 
 <br>
 
@@ -115,14 +139,14 @@ border:none;
 
 <div id="listeProspects"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <script>
 
 const supabaseUrl="https://xocsmlqmplnmpcfqrnmz.supabase.co"
 const supabaseKey="sb_publishable_kQ2NDobwMT9rfJYPYtY0bw_9ZKnf9MU"
 
-const supabaseClient=window.supabase.createClient(supabaseUrl,supabaseKey)
+const supabaseClient=supabase.createClient(supabaseUrl,supabaseKey)
 
 let prospectEnEdition=null
 
@@ -133,6 +157,8 @@ document.getElementById("formulaire").style.display="block"
 document.getElementById("nom").value=""
 document.getElementById("telephone").value=""
 document.getElementById("note").value=""
+document.getElementById("pipeline").value="business"
+document.getElementById("etape").value="prospection"
 document.getElementById("action_prochaine").value=""
 document.getElementById("date_rappel").value=""
 
@@ -145,6 +171,8 @@ async function enregistrerProspect(){
 const nom=document.getElementById("nom").value
 const telephone=document.getElementById("telephone").value
 const note=document.getElementById("note").value
+const pipeline=document.getElementById("pipeline").value
+const etape=document.getElementById("etape").value
 const action=document.getElementById("action_prochaine").value
 const date=document.getElementById("date_rappel").value
 
@@ -156,6 +184,8 @@ const {error}=await supabaseClient
 nom:nom,
 telephone:telephone,
 notes:note,
+pipeline:pipeline,
+etape:etape,
 action_prochaine:action,
 date_rappel:date
 })
@@ -179,6 +209,8 @@ const {error}=await supabaseClient
 nom:nom,
 telephone:telephone,
 notes:note,
+pipeline:pipeline,
+etape:etape,
 action_prochaine:action,
 date_rappel:date
 }
@@ -218,13 +250,10 @@ let classe="futur"
 if(prospect.date_rappel){
 
 if(prospect.date_rappel<aujourd){
-
 classe="retard"
-
-}else if(prospect.date_rappel===aujourd){
-
+}
+else if(prospect.date_rappel===aujourd){
 classe="aujourdhui"
-
 }
 
 }
@@ -236,6 +265,10 @@ zone.innerHTML+=`
 <strong>${prospect.nom}</strong><br>
 
 📞 ${prospect.telephone}<br>
+
+Pipeline : ${prospect.pipeline||"non défini"}<br>
+
+Étape : ${prospect.etape||"non définie"}<br>
 
 Action : ${prospect.action_prochaine||"non définie"}<br>
 
@@ -283,6 +316,8 @@ document.getElementById("formulaire").style.display="block"
 document.getElementById("nom").value=data.nom
 document.getElementById("telephone").value=data.telephone
 document.getElementById("note").value=data.notes||""
+document.getElementById("pipeline").value=data.pipeline||"business"
+document.getElementById("etape").value=data.etape||"prospection"
 document.getElementById("action_prochaine").value=data.action_prochaine||""
 document.getElementById("date_rappel").value=data.date_rappel||""
 
@@ -305,15 +340,10 @@ date_rappel:date
 .eq("id",id)
 
 if(error){
-
 alert(error.message)
-
 }else{
-
 alert("Action enregistrée, relance programmée")
-
 chargerProspects()
-
 }
 
 }
@@ -345,9 +375,13 @@ zone.innerHTML+=`
 
 📞 ${prospect.telephone}<br>
 
-Action : ${prospect.action_prochaine||"non définie"}<br>
+Pipeline : ${prospect.pipeline||""}<br>
 
-📅 Rappel : ${prospect.date_rappel||"non défini"}<br>
+Étape : ${prospect.etape||""}<br>
+
+Action : ${prospect.action_prochaine||""}<br>
+
+📅 Rappel : ${prospect.date_rappel||""}<br>
 
 <a href="https://wa.me/${prospect.telephone}" target="_blank">
 
