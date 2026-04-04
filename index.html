@@ -2,14 +2,17 @@
 <html lang="fr">
 
 <head>
+
 <meta charset="UTF-8">
+
 <title>3% CRM by Ronald</title>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 
 body{
-font-family: Arial, sans-serif;
+font-family:Arial;
 background:#0f172a;
 color:white;
 text-align:center;
@@ -25,7 +28,6 @@ background:#f97316;
 border:none;
 padding:12px;
 color:white;
-font-size:16px;
 border-radius:8px;
 margin:6px;
 cursor:pointer;
@@ -38,12 +40,24 @@ border-radius:10px;
 margin-top:15px;
 }
 
+.retard{
+border-left:8px solid red;
+}
+
+.aujourdhui{
+border-left:8px solid orange;
+}
+
+.futur{
+border-left:8px solid green;
+}
+
 #formulaire{
 display:none;
 margin-top:20px;
 }
 
-input, textarea{
+input,textarea{
 width:80%;
 padding:10px;
 margin:8px;
@@ -61,13 +75,13 @@ border:none;
 
 <div class="carte">
 
-<p>Bienvenue dans ton CRM intelligent.</p>
+<p>CRM intelligent de prospection</p>
 
-<button onclick="ouvrirFormulaire()">Ajouter un prospect</button>
+<button onclick="ouvrirFormulaire()">Ajouter prospect</button>
 
-<button onclick="chargerProspects()">Voir tous les prospects</button>
+<button onclick="chargerProspects()">Tous les prospects</button>
 
-<button onclick="voirRappels()">Voir rappels du jour</button>
+<button onclick="voirRappels()">Rappels du jour</button>
 
 </div>
 
@@ -110,42 +124,61 @@ border:none;
 
 <script>
 
-const supabaseUrl = "https://xocsmlqmplnmpcfqrnmz.supabase.co"
-const supabaseKey = "sb_publishable_kQ2NDobwMT9rfJYPYtY0bw_9ZKnf9MU"
+const supabaseUrl="https://xocsmlqmplnmpcfqrnmz.supabase.co"
 
-const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey)
+const supabaseKey="sb_publishable_kQ2NDobwMT9rfJYPYtY0bw_9ZKnf9MU"
+
+const supabaseClient=window.supabase.createClient(supabaseUrl,supabaseKey)
 
 
 
 function ouvrirFormulaire(){
+
 document.getElementById("formulaire").style.display="block"
+
 }
 
 
 
 async function enregistrerProspect(){
 
-const nom = document.getElementById("nom").value
-const telephone = document.getElementById("telephone").value
-const note = document.getElementById("note").value
-const action_prochaine = document.getElementById("action_prochaine").value
-const date_rappel = document.getElementById("date_rappel").value
+const nom=document.getElementById("nom").value
 
-const { error } = await supabaseClient
+const telephone=document.getElementById("telephone").value
+
+const note=document.getElementById("note").value
+
+const action=document.getElementById("action_prochaine").value
+
+const date=document.getElementById("date_rappel").value
+
+
+const{error}=await supabaseClient
+
 .from("contacts")
+
 .insert([
+
 {
-nom: nom,
-telephone: telephone,
-notes: note,
-action_prochaine: action_prochaine,
-date_rappel: date_rappel
+
+nom:nom,
+
+telephone:telephone,
+
+notes:note,
+
+action_prochaine:action,
+
+date_rappel:date
+
 }
+
 ])
+
 
 if(error){
 
-alert("Erreur : " + error.message)
+alert(error.message)
 
 }else{
 
@@ -161,34 +194,66 @@ chargerProspects()
 
 async function chargerProspects(){
 
-const { data, error } = await supabaseClient
+const{data,error}=await supabaseClient
+
 .from("contacts")
+
 .select("*")
 
+
 if(error){
+
 console.log(error)
+
 return
+
 }
 
-const zone = document.getElementById("listeProspects")
+
+const zone=document.getElementById("listeProspects")
 
 zone.innerHTML=""
 
+
 data.forEach(prospect=>{
 
-zone.innerHTML +=`
 
-<div class="carte">
+let classe="futur"
+
+
+const aujourd=new Date().toISOString().split('T')[0]
+
+
+if(prospect.date_rappel){
+
+if(prospect.date_rappel<aujourd){
+
+classe="retard"
+
+}
+
+else if(prospect.date_rappel===aujourd){
+
+classe="aujourdhui"
+
+}
+
+}
+
+
+zone.innerHTML+=`
+
+<div class="carte ${classe}">
 
 <strong>${prospect.nom}</strong><br>
 
 📞 ${prospect.telephone}<br>
 
-Action : ${prospect.action_prochaine || "non définie"}<br>
+Action : ${prospect.action_prochaine||"non définie"}<br>
 
-📅 Rappel : ${prospect.date_rappel || "non défini"}<br>
+📅 Rappel : ${prospect.date_rappel||"non défini"}<br>
 
-${prospect.notes || ""}
+${prospect.notes||""}
 
 <br><br>
 
@@ -206,22 +271,37 @@ ${prospect.notes || ""}
 
 async function modifierProspect(id){
 
-const nouveauNom = prompt("Nouveau nom")
-const nouveauTel = prompt("Nouveau téléphone")
-const nouvelleAction = prompt("Nouvelle action")
-const nouvelleDate = prompt("Nouvelle date rappel AAAA-MM-JJ")
-const nouvelleNote = prompt("Nouvelle note")
+const nom=prompt("Nouveau nom")
 
-const { error } = await supabaseClient
+const tel=prompt("Nouveau téléphone")
+
+const action=prompt("Nouvelle action")
+
+const date=prompt("Nouvelle date rappel AAAA-MM-JJ")
+
+const note=prompt("Nouvelle note")
+
+
+const{error}=await supabaseClient
+
 .from("contacts")
+
 .update({
-nom:nouveauNom,
-telephone:nouveauTel,
-action_prochaine:nouvelleAction,
-date_rappel:nouvelleDate,
-notes:nouvelleNote
+
+nom:nom,
+
+telephone:tel,
+
+action_prochaine:action,
+
+date_rappel:date,
+
+notes:note
+
 })
+
 .eq("id",id)
+
 
 if(error){
 
@@ -241,35 +321,45 @@ chargerProspects()
 
 async function voirRappels(){
 
-const aujourdHui = new Date().toISOString().split('T')[0]
+const aujourd=new Date().toISOString().split('T')[0]
 
-const { data, error } = await supabaseClient
+
+const{data,error}=await supabaseClient
+
 .from("contacts")
+
 .select("*")
-.eq("date_rappel",aujourdHui)
+
+.eq("date_rappel",aujourd)
+
 
 if(error){
+
 console.log(error)
+
 return
+
 }
 
-const zone = document.getElementById("listeProspects")
+
+const zone=document.getElementById("listeProspects")
 
 zone.innerHTML=""
 
+
 data.forEach(prospect=>{
 
-zone.innerHTML +=`
+zone.innerHTML+=`
 
-<div class="carte">
+<div class="carte aujourdhui">
 
 <strong>${prospect.nom}</strong><br>
 
 📞 ${prospect.telephone}<br>
 
-Action : ${prospect.action_prochaine || "non définie"}<br>
+Action : ${prospect.action_prochaine||"non définie"}<br>
 
-📅 Rappel : ${prospect.date_rappel || "non défini"}<br>
+📅 Rappel : ${prospect.date_rappel||"non défini"}<br>
 
 </div>
 
@@ -286,4 +376,5 @@ chargerProspects()
 </script>
 
 </body>
+
 </html>
