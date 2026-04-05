@@ -84,19 +84,13 @@ border:none;
 
 <h2>Prospect</h2>
 
-<input id="nom" placeholder="Nom">
+<input id="nom" placeholder="Nom"><br>
 
-<br>
+<input id="telephone" placeholder="Téléphone"><br>
 
-<input id="telephone" placeholder="Téléphone">
+<textarea id="note" placeholder="Note"></textarea><br>
 
-<br>
-
-<textarea id="note" placeholder="Note"></textarea>
-
-<br>
-
-<button type="button" onclick="dicterNote()">🎤 Dicter</button>
+<button onclick="toggleDictation()">🎤 Dicter</button>
 
 <br>
 
@@ -109,7 +103,7 @@ border:none;
 
 <br>
 
-<label>Étape</label>
+<label>Etape</label>
 
 <select id="etape">
 <option value="prospection">Prospection</option>
@@ -124,13 +118,9 @@ border:none;
 
 <br>
 
-<input id="action_prochaine" placeholder="Prochaine action">
+<input id="action_prochaine" placeholder="Prochaine action"><br>
 
-<br>
-
-<input type="date" id="date_rappel">
-
-<br>
+<input type="date" id="date_rappel"><br>
 
 <button onclick="enregistrerProspect()">Enregistrer</button>
 
@@ -150,27 +140,8 @@ const supabaseKey="sb_publishable_kQ2NDobwMT9rfJYPYtY0bw_9ZKnf9MU"
 const supabaseClient=supabase.createClient(supabaseUrl,supabaseKey)
 
 let prospectEnEdition=null
-
-let reconnaissance
-let dicteeActive=false
-
-
-
-async function enregistrerInteraction(contactId, texte){
-
-await supabaseClient
-.from("interactions")
-.insert([
-{
-contact_id:contactId,
-note:texte,
-date_interaction:new Date().toISOString()
-}
-])
-
-}
-
-
+let recognition=null
+let enregistrementActif=false
 
 function ouvrirFormulaire(){
 
@@ -188,50 +159,46 @@ prospectEnEdition=null
 
 }
 
-
-
-function dicterNote(){
+function toggleDictation(){
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
 
 if(!SpeechRecognition){
-alert("Dictée vocale non supportée")
+alert("Dictée non supportée")
 return
 }
 
-if(!reconnaissance){
+if(!recognition){
 
-reconnaissance=new SpeechRecognition()
-reconnaissance.lang="fr-FR"
-reconnaissance.continuous=true
-reconnaissance.interimResults=false
+recognition=new SpeechRecognition()
+recognition.lang="fr-FR"
+recognition.continuous=true
 
-reconnaissance.onresult=function(event){
+recognition.onresult=function(event){
 
 const texte=event.results[event.results.length-1][0].transcript
-const zoneNote=document.getElementById("note")
 
-zoneNote.value = zoneNote.value + " " + texte
+const zone=document.getElementById("note")
+
+zone.value=zone.value+" "+texte
 
 }
 
 }
 
-if(!dicteeActive){
+if(enregistrementActif){
 
-reconnaissance.start()
-dicteeActive=true
+recognition.stop()
+enregistrementActif=false
 
 }else{
 
-reconnaissance.stop()
-dicteeActive=false
+recognition.start()
+enregistrementActif=true
 
 }
 
 }
-
-
 
 async function enregistrerProspect(){
 
@@ -241,12 +208,12 @@ const note=document.getElementById("note").value
 const pipeline=document.getElementById("pipeline").value
 const etape=document.getElementById("etape").value
 const action=document.getElementById("action_prochaine").value
+
 let date=document.getElementById("date_rappel").value
 
-if(date===""){
+if(!date){
 date=null
 }
-
 
 if(prospectEnEdition){
 
@@ -264,25 +231,19 @@ date_rappel:date
 .eq("id",prospectEnEdition)
 
 if(error){
-
 alert(error.message)
-
-}else{
-
-await enregistrerInteraction(prospectEnEdition,"Prospect modifié")
-
+return
 }
 
-prospectEnEdition=null
+await enregistrerInteraction(prospectEnEdition,note)
 
-chargerProspects()
+alert("Prospect modifié")
 
 }else{
 
 const {data,error}=await supabaseClient
 .from("contacts")
-.insert([
-{
+.insert([{
 nom:nom,
 telephone:telephone,
 notes:note,
@@ -290,13 +251,17 @@ pipeline:pipeline,
 etape:etape,
 action_prochaine:action,
 date_rappel:date
-}
-])
+}])
 .select()
 
-if(!error){
+if(error){
+alert(error.message)
+return
+}
 
-await enregistrerInteraction(data[0].id,"Prospect créé")
+await enregistrerInteraction(data[0].id,note)
+
+alert("Prospect enregistré")
 
 }
 
@@ -304,9 +269,17 @@ chargerProspects()
 
 }
 
+async function enregistrerInteraction(contactId,note){
+
+await supabaseClient
+.from("interactions")
+.insert([{
+contact_id:contactId,
+note:note,
+date_interaction:new Date().toISOString()
+}])
+
 }
-
-
 
 async function chargerProspects(){
 
@@ -347,15 +320,15 @@ zone.innerHTML+=`
 
 📞 ${prospect.telephone}<br>
 
-Pipeline : ${prospect.pipeline||""}<br>
+Pipeline : ${prospect.pipeline || ""}<br>
 
-Étape : ${prospect.etape||""}<br>
+Etape : ${prospect.etape || ""}<br>
 
-Action : ${prospect.action_prochaine||""}<br>
+Action : ${prospect.action_prochaine || ""}<br>
 
-📅 Rappel : ${prospect.date_rappel||""}<br>
+📅 Rappel : ${prospect.date_rappel || ""}<br>
 
-${prospect.notes||""}
+${prospect.notes || ""}
 
 <br><br>
 
@@ -374,8 +347,6 @@ ${prospect.notes||""}
 })
 
 }
-
-
 
 async function modifierProspect(id){
 
@@ -396,15 +367,13 @@ document.getElementById("formulaire").style.display="block"
 
 document.getElementById("nom").value=data.nom
 document.getElementById("telephone").value=data.telephone
-document.getElementById("note").value=data.notes||""
-document.getElementById("pipeline").value=data.pipeline||"business"
-document.getElementById("etape").value=data.etape||"prospection"
-document.getElementById("action_prochaine").value=data.action_prochaine||""
-document.getElementById("date_rappel").value=data.date_rappel||""
+document.getElementById("note").value=data.notes || ""
+document.getElementById("pipeline").value=data.pipeline || "business"
+document.getElementById("etape").value=data.etape || "prospection"
+document.getElementById("action_prochaine").value=data.action_prochaine || ""
+document.getElementById("date_rappel").value=data.date_rappel || ""
 
 }
-
-
 
 async function actionFaite(id){
 
@@ -414,7 +383,7 @@ nouvelleDate.setDate(nouvelleDate.getDate()+3)
 
 const date=nouvelleDate.toISOString().split('T')[0]
 
-await supabaseClient
+const {error}=await supabaseClient
 .from("contacts")
 .update({
 action_prochaine:"Relancer",
@@ -422,13 +391,19 @@ date_rappel:date
 })
 .eq("id",id)
 
-await enregistrerInteraction(id,"Action effectuée - relance programmée")
+if(error){
+alert(error.message)
+}else{
+
+await enregistrerInteraction(id,"Action faite - relance programmée")
+
+alert("Relance programmée")
 
 chargerProspects()
 
 }
 
-
+}
 
 async function voirRappels(){
 
@@ -437,7 +412,7 @@ const aujourd=new Date().toISOString().split('T')[0]
 const {data,error}=await supabaseClient
 .from("contacts")
 .select("*")
-.lte("date_rappel",aujourd)
+.eq("date_rappel",aujourd)
 
 if(error){
 console.log(error)
@@ -445,21 +420,26 @@ return
 }
 
 const zone=document.getElementById("listeProspects")
+
 zone.innerHTML=""
 
 data.forEach(prospect=>{
 
 zone.innerHTML+=`
 
-<div class="carte retard">
+<div class="carte aujourdhui">
 
 <strong>${prospect.nom}</strong><br>
 
 📞 ${prospect.telephone}<br>
 
-Action : ${prospect.action_prochaine||""}<br>
+Pipeline : ${prospect.pipeline || ""}<br>
 
-📅 Rappel : ${prospect.date_rappel||""}
+Etape : ${prospect.etape || ""}<br>
+
+Action : ${prospect.action_prochaine || ""}<br>
+
+📅 Rappel : ${prospect.date_rappel || ""}
 
 <a href="https://wa.me/${prospect.telephone}" target="_blank">
 <button style="background:#25D366">WhatsApp</button>
