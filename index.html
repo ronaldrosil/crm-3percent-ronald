@@ -43,23 +43,21 @@ display:none;
 margin-top:20px;
 }
 
-#historique{
-margin-top:20px;
-}
-
-.interaction{
-background:#0f172a;
-padding:8px;
-border-radius:6px;
-margin-top:6px;
-}
-
 input,textarea,select{
 width:80%;
 padding:10px;
 margin:8px;
 border-radius:6px;
 border:none;
+}
+
+#zoneHistorique{
+display:none;
+margin-top:20px;
+text-align:left;
+max-width:700px;
+margin-left:auto;
+margin-right:auto;
 }
 
 </style>
@@ -78,6 +76,8 @@ border:none;
 <button onclick="chargerProspects()">Tous les prospects</button>
 
 <button onclick="voirRappels()">Rappels du jour</button>
+
+<button onclick="voirHistorique()" style="background:#8b5cf6">📋 Historique</button>
 
 </div>
 
@@ -129,11 +129,11 @@ border:none;
 </div>
 
 
-<div id="historique"></div>
-
 <h2>Prospects</h2>
 
 <div id="listeProspects"></div>
+
+<div id="zoneHistorique"></div>
 
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -210,6 +210,7 @@ dictationActive=true
 }
 
 
+
 async function enregistrerInteraction(contactId,note){
 
 await supabaseClient
@@ -221,6 +222,7 @@ date_interaction:new Date().toISOString()
 }])
 
 }
+
 
 
 async function enregistrerProspect(){
@@ -291,6 +293,7 @@ chargerProspects()
 }
 
 
+
 async function chargerProspects(){
 
 const {data,error}=await supabaseClient
@@ -301,6 +304,8 @@ if(error){
 console.log(error)
 return
 }
+
+document.getElementById("zoneHistorique").style.display="none"
 
 const zone=document.getElementById("listeProspects")
 zone.innerHTML=""
@@ -342,8 +347,6 @@ ${prospect.notes || ""}
 
 <button onclick="actionFaite('${prospect.id}')">Action faite</button>
 
-<button onclick="voirHistorique('${prospect.id}','${prospect.nom}')">Historique</button>
-
 <a href="https://wa.me/${prospect.telephone}" target="_blank">
 <button style="background:#25D366">WhatsApp</button>
 </a>
@@ -356,36 +359,6 @@ ${prospect.notes || ""}
 
 }
 
-
-async function voirHistorique(id,nom){
-
-const {data}=await supabaseClient
-.from("interactions")
-.select("*")
-.eq("contact_id",id)
-.order("created_at",{ascending:false})
-
-let html=<div class="carte"><h2>Historique ${nom}</h2>
-
-if(data.length===0){
-html+=<p>Aucune interaction enregistrée</p>
-}
-
-data.forEach(i=>{
-
-const date=new Date(i.created_at).toLocaleDateString()
-
-html+=<div class="interaction">${date} — ${i.note}</div>
-
-})
-
-html+=</div>
-
-document.getElementById("historique").innerHTML=html
-
-window.scrollTo(0,0)
-
-}
 
 
 async function modifierProspect(id){
@@ -411,6 +384,7 @@ document.getElementById("date_rappel").value=data.date_rappel || ""
 }
 
 
+
 async function actionFaite(id){
 
 const nouvelleDate=new Date()
@@ -434,6 +408,7 @@ chargerProspects()
 }
 
 
+
 async function voirRappels(){
 
 const aujourd=new Date().toISOString().split('T')[0]
@@ -447,6 +422,8 @@ if(error){
 console.log(error)
 return
 }
+
+document.getElementById("zoneHistorique").style.display="none"
 
 const zone=document.getElementById("listeProspects")
 zone.innerHTML=""
@@ -482,6 +459,50 @@ Action : ${p.action_prochaine}<br>
 })
 
 }
+
+
+
+async function voirHistorique(){
+
+const {data,error}=await supabaseClient
+.from("interactions")
+.select("*, contacts(nom)")
+.order("date_interaction",{ascending:false})
+.limit(50)
+
+if(error){
+console.log(error)
+return
+}
+
+document.getElementById("listeProspects").innerHTML=""
+
+const zone=document.getElementById("zoneHistorique")
+zone.style.display="block"
+zone.innerHTML="<h2>📋 Historique des interactions</h2>"
+
+if(data.length===0){
+zone.innerHTML+="<p>Aucune interaction enregistrée.</p>"
+return
+}
+
+data.forEach(item=>{
+
+const nom=item.contacts ? item.contacts.nom : "Contact inconnu"
+const date=new Date(item.date_interaction).toLocaleString("fr-FR")
+
+zone.innerHTML+=`
+<div class="carte">
+<strong>${nom}</strong><br>
+🕐 ${date}<br>
+📝 ${item.note || ""}
+</div>
+`
+
+})
+
+}
+
 
 chargerProspects()
 
