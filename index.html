@@ -38,15 +38,8 @@ margin-top:15px;
 .aujourdhui{border-left:8px solid orange;}
 .futur{border-left:8px solid green;}
 
-#formulaire{
-display:none;
-margin-top:20px;
-}
-
-#historique{
-display:none;
-margin-top:20px;
-}
+#formulaire{display:none;margin-top:20px;}
+#historique{display:none;margin-top:20px;}
 
 .interaction{
 background:#0f172a;
@@ -71,15 +64,11 @@ border:none;
 <h1>3% CRM par Ronald</h1>
 
 <div class="carte">
-
 <p>CRM intelligent de prospection</p>
 
 <button onclick="ouvrirFormulaire()">Ajouter prospect</button>
-
 <button onclick="chargerProspects()">Tous les prospects</button>
-
 <button onclick="voirRappels()">Rappels du jour</button>
-
 </div>
 
 
@@ -88,7 +77,6 @@ border:none;
 <h2>Prospect</h2>
 
 <input id="nom" placeholder="Nom"><br>
-
 <input id="telephone" placeholder="Téléphone"><br>
 
 <textarea id="note" placeholder="Note"></textarea><br>
@@ -122,7 +110,6 @@ border:none;
 <br>
 
 <input id="action_prochaine" placeholder="Prochaine action"><br>
-
 <input type="date" id="date_rappel"><br>
 
 <button onclick="enregistrerProspect()">Enregistrer</button>
@@ -134,7 +121,6 @@ border:none;
 
 
 <h2>Prospects</h2>
-
 <div id="listeProspects"></div>
 
 
@@ -198,19 +184,14 @@ zone.value = zone.value+" "+texte
 }
 
 if(dictationActive){
-
 recognition.stop()
 dictationActive=false
-
 }else{
-
 recognition.start()
 dictationActive=true
-
 }
 
 }
-
 
 
 async function enregistrerInteraction(contactId,note){
@@ -219,12 +200,10 @@ await supabaseClient
 .from("interactions")
 .insert([{
 contact_id:contactId,
-note:note,
-date_interaction:new Date().toISOString()
+note:note
 }])
 
 }
-
 
 
 async function enregistrerProspect(){
@@ -284,7 +263,6 @@ chargerProspects()
 }
 
 
-
 async function chargerProspects(){
 
 const {data}=await supabaseClient
@@ -301,10 +279,8 @@ data.forEach(p=>{
 let classe="futur"
 
 if(p.date_rappel){
-
 if(p.date_rappel<aujourd){classe="retard"}
 else if(p.date_rappel===aujourd){classe="aujourdhui"}
-
 }
 
 zone.innerHTML+=`
@@ -346,20 +322,23 @@ ${p.notes || ""}
 }
 
 
-
 async function voirHistorique(id,nom){
 
 const {data}=await supabaseClient
 .from("interactions")
 .select("*")
 .eq("contact_id",id)
-.order("date_interaction",{ascending:false})
+.order("created_at",{ascending:false})
 
 let html=<div class="carte"><h2>Historique ${nom}</h2>
 
+if(data.length===0){
+html+=<p>Aucune interaction enregistrée</p>
+}
+
 data.forEach(i=>{
 
-const date=new Date(i.date_interaction).toLocaleDateString()
+const date=new Date(i.created_at).toLocaleDateString()
 
 html+=<div class="interaction">${date} — ${i.note}</div>
 
@@ -373,7 +352,6 @@ document.getElementById("historique").style.display="block"
 window.scrollTo(0,0)
 
 }
-
 
 
 async function modifierProspect(id){
@@ -399,11 +377,9 @@ document.getElementById("date_rappel").value=data.date_rappel || ""
 }
 
 
-
 async function actionFaite(id){
 
 const nouvelleDate=new Date()
-
 nouvelleDate.setDate(nouvelleDate.getDate()+3)
 
 const date=nouvelleDate.toISOString().split('T')[0]
@@ -421,7 +397,6 @@ await enregistrerInteraction(id,"Action faite - relance programmée")
 chargerProspects()
 
 }
-
 
 
 async function voirRappels(){
