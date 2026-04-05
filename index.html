@@ -51,13 +51,13 @@ border-radius:6px;
 border:none;
 }
 
-#zoneHistorique{
+.zone-historique-prospect{
 display:none;
-margin-top:20px;
+margin-top:10px;
 text-align:left;
-max-width:700px;
-margin-left:auto;
-margin-right:auto;
+background:#0f172a;
+border-radius:8px;
+padding:10px;
 }
 
 </style>
@@ -76,8 +76,6 @@ margin-right:auto;
 <button onclick="chargerProspects()">Tous les prospects</button>
 
 <button onclick="voirRappels()">Rappels du jour</button>
-
-<button onclick="voirHistorique()" style="background:#8b5cf6">📋 Historique</button>
 
 </div>
 
@@ -132,8 +130,6 @@ margin-right:auto;
 <h2>Prospects</h2>
 
 <div id="listeProspects"></div>
-
-<div id="zoneHistorique"></div>
 
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -305,8 +301,6 @@ console.log(error)
 return
 }
 
-document.getElementById("zoneHistorique").style.display="none"
-
 const zone=document.getElementById("listeProspects")
 zone.innerHTML=""
 
@@ -350,6 +344,12 @@ ${prospect.notes || ""}
 <a href="https://wa.me/${prospect.telephone}" target="_blank">
 <button style="background:#25D366">WhatsApp</button>
 </a>
+
+<button onclick="voirHistoriqueProspect('${prospect.id}')" style="background:#8b5cf6">📋 Historique</button>
+
+<button onclick="supprimerProspect('${prospect.id}','${prospect.nom}')" style="background:#ef4444">🗑 Supprimer</button>
+
+<div id="historique-${prospect.id}" class="zone-historique-prospect"></div>
 
 </div>
 
@@ -423,8 +423,6 @@ console.log(error)
 return
 }
 
-document.getElementById("zoneHistorique").style.display="none"
-
 const zone=document.getElementById("listeProspects")
 zone.innerHTML=""
 
@@ -452,6 +450,22 @@ Action : ${p.action_prochaine}<br>
 
 📅 Rappel : ${p.date_rappel}
 
+<br><br>
+
+<button onclick="modifierProspect('${p.id}')">Modifier</button>
+
+<button onclick="actionFaite('${p.id}')">Action faite</button>
+
+<a href="https://wa.me/${p.telephone}" target="_blank">
+<button style="background:#25D366">WhatsApp</button>
+</a>
+
+<button onclick="voirHistoriqueProspect('${p.id}')" style="background:#8b5cf6">📋 Historique</button>
+
+<button onclick="supprimerProspect('${p.id}','${p.nom}')" style="background:#ef4444">🗑 Supprimer</button>
+
+<div id="historique-${p.id}" class="zone-historique-prospect"></div>
+
 </div>
 
 `
@@ -462,44 +476,74 @@ Action : ${p.action_prochaine}<br>
 
 
 
-async function voirHistorique(){
+async function voirHistoriqueProspect(id){
+
+const zone=document.getElementById("historique-"+id)
+
+if(zone.style.display==="block"){
+zone.style.display="none"
+return
+}
 
 const {data,error}=await supabaseClient
 .from("interactions")
-.select("*, contacts(nom)")
+.select("*")
+.eq("contact_id",id)
 .order("date_interaction",{ascending:false})
-.limit(50)
 
 if(error){
 console.log(error)
 return
 }
 
-document.getElementById("listeProspects").innerHTML=""
-
-const zone=document.getElementById("zoneHistorique")
 zone.style.display="block"
-zone.innerHTML="<h2>📋 Historique des interactions</h2>"
 
 if(data.length===0){
-zone.innerHTML+="<p>Aucune interaction enregistrée.</p>"
+zone.innerHTML="<p>Aucune interaction enregistrée.</p>"
 return
 }
 
+zone.innerHTML="<strong>📋 Historique :</strong><br><br>"
+
 data.forEach(item=>{
 
-const nom=item.contacts ? item.contacts.nom : "Contact inconnu"
 const date=new Date(item.date_interaction).toLocaleString("fr-FR")
 
 zone.innerHTML+=`
-<div class="carte">
-<strong>${nom}</strong><br>
+<div style="border-bottom:1px solid #334155;padding:8px 0;">
 🕐 ${date}<br>
 📝 ${item.note || ""}
 </div>
 `
 
 })
+
+}
+
+
+
+async function supprimerProspect(id,nom){
+
+const confirmation=confirm("Supprimer "+nom+" ? Cette action est irréversible.")
+
+if(!confirmation){return}
+
+await supabaseClient
+.from("interactions")
+.delete()
+.eq("contact_id",id)
+
+const {error}=await supabaseClient
+.from("contacts")
+.delete()
+.eq("id",id)
+
+if(error){
+alert(error.message)
+return
+}
+
+chargerProspects()
 
 }
 
