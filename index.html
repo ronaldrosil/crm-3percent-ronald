@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>3% CRM by Ronald</title>
+<title>3% CRM par Ronald</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -73,12 +73,11 @@ border:none;
 <p>CRM intelligent de prospection</p>
 
 <button onclick="ouvrirFormulaire()">Ajouter prospect</button>
-
 <button onclick="chargerProspects()">Tous les prospects</button>
-
 <button onclick="voirRappels()">Rappels du jour</button>
 
 </div>
+
 
 <div id="formulaire">
 
@@ -93,7 +92,8 @@ border:none;
 <textarea id="note" placeholder="Note"></textarea>
 <br>
 
-<button type="button" onclick="dicterNote()">🎤 Dicter</button>
+<button type="button" onclick="dicterNote()">🎤 Dictée</button>
+
 <br>
 
 <label>Pipeline</label>
@@ -145,23 +145,22 @@ const supabaseClient=supabase.createClient(supabaseUrl,supabaseKey)
 
 let prospectEnEdition=null
 
+let reconnaissance
+let dicteeActive=false
+
 
 
 async function enregistrerInteraction(contactId, texte){
 
-const { error } = await supabaseClient
+await supabaseClient
 .from("interactions")
 .insert([
 {
-contact_id: contactId,
-note: texte,
-date_interaction: new Date().toISOString()
+contact_id:contactId,
+note:texte,
+date_interaction:new Date().toISOString()
 }
 ])
-
-if(error){
-console.log("Erreur interaction :", error)
-}
 
 }
 
@@ -190,22 +189,38 @@ function dicterNote(){
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
 
 if(!SpeechRecognition){
-alert("La dictée vocale n'est pas supportée sur ce navigateur")
+alert("Dictée vocale non supportée")
 return
 }
 
-const recognition = new SpeechRecognition()
+if(!reconnaissance){
 
-recognition.lang="fr-FR"
-recognition.start()
+reconnaissance=new SpeechRecognition()
+reconnaissance.lang="fr-FR"
+reconnaissance.continuous=true
+reconnaissance.interimResults=false
 
-recognition.onresult=function(event){
+reconnaissance.onresult=function(event){
 
-const texte=event.results[0][0].transcript
+const texte=event.results[event.results.length-1][0].transcript
 
 const zoneNote=document.getElementById("note")
 
-zoneNote.value=zoneNote.value+" "+texte
+zoneNote.value = zoneNote.value + " " + texte
+
+}
+
+}
+
+if(!dicteeActive){
+
+reconnaissance.start()
+dicteeActive=true
+
+}else{
+
+reconnaissance.stop()
+dicteeActive=false
 
 }
 
@@ -239,17 +254,18 @@ date_rappel:date
 })
 .eq("id",prospectEnEdition)
 
-if(!error){
+if(error){
 
-await enregistrerInteraction(
-prospectEnEdition,
-"Prospect modifié"
-)
+alert("Erreur modification : "+error.message)
+
+}else{
+
+await enregistrerInteraction(prospectEnEdition,"Prospect modifié")
+alert("Prospect modifié")
 
 }
 
 prospectEnEdition=null
-
 chargerProspects()
 
 }else{
@@ -269,12 +285,13 @@ date_rappel:date
 ])
 .select()
 
-if(!error){
+if(error){
 
-await enregistrerInteraction(
-data[0].id,
-"Prospect créé"
-)
+alert(error.message)
+
+}else{
+
+await enregistrerInteraction(data[0].id,"Prospect créé")
 
 }
 
@@ -291,6 +308,7 @@ async function chargerProspects(){
 const {data,error}=await supabaseClient
 .from("contacts")
 .select("*")
+.order("created_at",{ascending:false})
 
 if(error){
 console.log(error)
@@ -308,10 +326,12 @@ let classe="futur"
 
 if(prospect.date_rappel){
 
-if(prospect.date_rappel<aujourd){
+const rappel=prospect.date_rappel.substring(0,10)
+
+if(rappel<aujourd){
 classe="retard"
 }
-else if(prospect.date_rappel===aujourd){
+else if(rappel===aujourd){
 classe="aujourdhui"
 }
 
@@ -378,7 +398,7 @@ document.getElementById("note").value=data.notes||""
 document.getElementById("pipeline").value=data.pipeline||"business"
 document.getElementById("etape").value=data.etape||"prospection"
 document.getElementById("action_prochaine").value=data.action_prochaine||""
-document.getElementById("date_rappel").value=data.date_rappel||""
+document.getElementById("date_rappel").value=data.date_rappel?data.date_rappel.substring(0,10):""
 
 }
 
@@ -392,7 +412,7 @@ nouvelleDate.setDate(nouvelleDate.getDate()+3)
 
 const date=nouvelleDate.toISOString().split('T')[0]
 
-const {error}=await supabaseClient
+await supabaseClient
 .from("contacts")
 .update({
 action_prochaine:"Relancer",
@@ -400,14 +420,7 @@ date_rappel:date
 })
 .eq("id",id)
 
-if(!error){
-
-await enregistrerInteraction(
-id,
-"Action effectuée - relance programmée"
-)
-
-}
+await enregistrerInteraction(id,"Action effectuée - relance programmée")
 
 chargerProspects()
 
@@ -422,7 +435,8 @@ const aujourd=new Date().toISOString().split('T')[0]
 const {data,error}=await supabaseClient
 .from("contacts")
 .select("*")
-.eq("date_rappel",aujourd)
+.lte("date_rappel",aujourd)
+.order("date_rappel",{ascending:true})
 
 if(error){
 console.log(error)
@@ -434,21 +448,27 @@ zone.innerHTML=""
 
 data.forEach(prospect=>{
 
+let classe="retard"
+
+if(prospect.date_rappel.substring(0,10)===aujourd){
+classe="aujourdhui"
+}
+
 zone.innerHTML+=`
 
-<div class="carte aujourdhui">
+<div class="carte ${classe}">
 
 <strong>${prospect.nom}</strong><br>
 
 📞 ${prospect.telephone}<br>
 
-Pipeline : ${prospect.pipeline||""}<br>
-
-Étape : ${prospect.etape||""}<br>
-
 Action : ${prospect.action_prochaine||""}<br>
 
 📅 Rappel : ${prospect.date_rappel||""}
+
+<a href="https://wa.me/${prospect.telephone}" target="_blank">
+<button style="background:#25D366">WhatsApp</button>
+</a>
 
 </div>
 
@@ -457,6 +477,7 @@ Action : ${prospect.action_prochaine||""}<br>
 })
 
 }
+
 
 chargerProspects()
 
