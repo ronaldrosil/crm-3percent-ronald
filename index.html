@@ -241,7 +241,11 @@ const note=document.getElementById("note").value
 const pipeline=document.getElementById("pipeline").value
 const etape=document.getElementById("etape").value
 const action=document.getElementById("action_prochaine").value
-const date=document.getElementById("date_rappel").value
+let date=document.getElementById("date_rappel").value
+
+if(date===""){
+date=null
+}
 
 
 if(prospectEnEdition){
