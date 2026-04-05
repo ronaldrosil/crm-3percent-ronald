@@ -32,6 +32,7 @@ background:#1e293b;
 padding:20px;
 border-radius:10px;
 margin-top:15px;
+cursor:pointer;
 }
 
 .retard{border-left:8px solid red;}
@@ -43,12 +44,25 @@ display:none;
 margin-top:20px;
 }
 
+#fiche{
+display:none;
+margin-top:20px;
+}
+
 input,textarea,select{
 width:80%;
 padding:10px;
 margin:8px;
 border-radius:6px;
 border:none;
+}
+
+.interaction{
+background:#0f172a;
+padding:8px;
+border-radius:6px;
+margin-top:6px;
+font-size:14px;
 }
 
 </style>
@@ -116,6 +130,9 @@ border:none;
 <button onclick="enregistrerProspect()">Enregistrer</button>
 
 </div>
+
+
+<div id="fiche"></div>
 
 
 <h2>Prospects</h2>
@@ -224,7 +241,6 @@ const action=document.getElementById("action_prochaine").value
 let date=document.getElementById("date_rappel").value
 if(!date){date=null}
 
-
 if(prospectEnEdition){
 
 const {error}=await supabaseClient
@@ -240,14 +256,9 @@ date_rappel:date
 })
 .eq("id",prospectEnEdition)
 
-if(error){
-alert(error.message)
-return
-}
+if(error){alert(error.message);return}
 
 await enregistrerInteraction(prospectEnEdition,note)
-
-alert("Prospect modifié")
 
 }else{
 
@@ -264,14 +275,9 @@ date_rappel:date
 }])
 .select()
 
-if(error){
-alert(error.message)
-return
-}
+if(error){alert(error.message);return}
 
 await enregistrerInteraction(data[0].id,note)
-
-alert("Prospect enregistré")
 
 }
 
@@ -283,14 +289,9 @@ chargerProspects()
 
 async function chargerProspects(){
 
-const {data,error}=await supabaseClient
+const {data}=await supabaseClient
 .from("contacts")
 .select("*")
-
-if(error){
-console.log(error)
-return
-}
 
 const zone=document.getElementById("listeProspects")
 zone.innerHTML=""
@@ -310,7 +311,7 @@ else if(prospect.date_rappel===aujourd){classe="aujourdhui"}
 
 zone.innerHTML+=`
 
-<div class="carte ${classe}">
+<div class="carte ${classe}" onclick="ouvrirFiche('${prospect.id}')">
 
 <strong>${prospect.nom}</strong><br>
 
@@ -328,11 +329,11 @@ ${prospect.notes || ""}
 
 <br><br>
 
-<button onclick="modifierProspect('${prospect.id}')">Modifier</button>
+<button onclick="event.stopPropagation();modifierProspect('${prospect.id}')">Modifier</button>
 
-<button onclick="actionFaite('${prospect.id}')">Action faite</button>
+<button onclick="event.stopPropagation();actionFaite('${prospect.id}')">Action faite</button>
 
-<a href="https://wa.me/${prospect.telephone}" target="_blank">
+<a onclick="event.stopPropagation();" href="https://wa.me/${prospect.telephone}" target="_blank">
 <button style="background:#25D366">WhatsApp</button>
 </a>
 
@@ -341,6 +342,50 @@ ${prospect.notes || ""}
 `
 
 })
+
+}
+
+
+
+async function ouvrirFiche(id){
+
+const {data:prospect}=await supabaseClient
+.from("contacts")
+.select("*")
+.eq("id",id)
+.single()
+
+const {data:interactions}=await supabaseClient
+.from("interactions")
+.select("*")
+.eq("contact_id",id)
+.order("date_interaction",{ascending:false})
+
+let html=`<div class="carte">
+
+<h2>${prospect.nom}</h2>
+
+📞 ${prospect.telephone}<br>
+Pipeline : ${prospect.pipeline}<br>
+Etape : ${prospect.etape}<br>
+
+<h3>Historique</h3>
+`
+
+interactions.forEach(i=>{
+
+const date=new Date(i.date_interaction).toLocaleDateString()
+
+html+=<div class="interaction">${date} — ${i.note}</div>
+
+})
+
+html+=</div>
+
+document.getElementById("fiche").innerHTML=html
+document.getElementById("fiche").style.display="block"
+
+window.scrollTo(0,0)
 
 }
 
@@ -398,15 +443,10 @@ async function voirRappels(){
 
 const aujourd=new Date().toISOString().split('T')[0]
 
-const {data,error}=await supabaseClient
+const {data}=await supabaseClient
 .from("contacts")
 .select("*")
 .lte("date_rappel",aujourd)
-
-if(error){
-console.log(error)
-return
-}
 
 const zone=document.getElementById("listeProspects")
 zone.innerHTML=""
@@ -414,10 +454,7 @@ zone.innerHTML=""
 data.forEach(p=>{
 
 let classe="retard"
-
-if(p.date_rappel===aujourd){
-classe="aujourdhui"
-}
+if(p.date_rappel===aujourd){classe="aujourdhui"}
 
 zone.innerHTML+=`
 
