@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+
 body{
 font-family:Arial;
 background:#0f172a;
@@ -42,6 +43,17 @@ display:none;
 margin-top:20px;
 }
 
+#historique{
+margin-top:20px;
+}
+
+.interaction{
+background:#0f172a;
+padding:8px;
+border-radius:6px;
+margin-top:6px;
+}
+
 input,textarea,select{
 width:80%;
 padding:10px;
@@ -49,6 +61,7 @@ margin:8px;
 border-radius:6px;
 border:none;
 }
+
 </style>
 </head>
 
@@ -57,20 +70,31 @@ border:none;
 <h1>3% CRM par Ronald</h1>
 
 <div class="carte">
+
 <p>CRM intelligent de prospection</p>
+
 <button onclick="ouvrirFormulaire()">Ajouter prospect</button>
+
 <button onclick="chargerProspects()">Tous les prospects</button>
+
 <button onclick="voirRappels()">Rappels du jour</button>
+
 </div>
+
 
 <div id="formulaire">
 
 <h2>Prospect</h2>
 
 <input id="nom" placeholder="Nom"><br>
+
 <input id="telephone" placeholder="Téléphone"><br>
 
 <textarea id="note" placeholder="Note"></textarea><br>
+
+<button onclick="toggleDictation()">🎤 Dicter</button>
+
+<br>
 
 <label>Pipeline</label>
 
@@ -104,20 +128,29 @@ border:none;
 
 </div>
 
+
+<div id="historique"></div>
+
 <h2>Prospects</h2>
 
 <div id="listeProspects"></div>
+
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <script>
 
+const { createClient } = supabase
+
 const supabaseUrl="https://xocsmlqmplnmpcfqrnmz.supabase.co"
 const supabaseKey="sb_publishable_kQ2NDobwMT9rfJYPYtY0bw_9ZKnf9MU"
 
-const supabaseClient = supabase.createClient(supabaseUrl,supabaseKey)
+const supabaseClient=createClient(supabaseUrl,supabaseKey)
 
 let prospectEnEdition=null
+let recognition=null
+let dictationActive=false
+
 
 function ouvrirFormulaire(){
 
@@ -135,6 +168,61 @@ prospectEnEdition=null
 
 }
 
+
+function toggleDictation(){
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+
+if(!SpeechRecognition){
+alert("Dictée non supportée")
+return
+}
+
+if(!recognition){
+
+recognition=new SpeechRecognition()
+recognition.lang="fr-FR"
+recognition.continuous=true
+
+recognition.onresult=function(event){
+
+const texte=event.results[event.results.length-1][0].transcript
+const zone=document.getElementById("note")
+
+zone.value = zone.value+" "+texte
+
+}
+
+}
+
+if(dictationActive){
+
+recognition.stop()
+dictationActive=false
+
+}else{
+
+recognition.start()
+dictationActive=true
+
+}
+
+}
+
+
+async function enregistrerInteraction(contactId,note){
+
+await supabaseClient
+.from("interactions")
+.insert([{
+contact_id:contactId,
+note:note,
+date_interaction:new Date().toISOString()
+}])
+
+}
+
+
 async function enregistrerProspect(){
 
 const nom=document.getElementById("nom").value
@@ -143,42 +231,58 @@ const note=document.getElementById("note").value
 const pipeline=document.getElementById("pipeline").value
 const etape=document.getElementById("etape").value
 const action=document.getElementById("action_prochaine").value
-let date=document.getElementById("date_rappel").value
 
-if(date===""){date=null}
+let date=document.getElementById("date_rappel").value
+if(!date){date=null}
+
 
 if(prospectEnEdition){
 
 const {error}=await supabaseClient
 .from("contacts")
 .update({
-nom:nom,
-telephone:telephone,
+nom,
+telephone,
 notes:note,
-pipeline:pipeline,
-etape:etape,
+pipeline,
+etape,
 action_prochaine:action,
 date_rappel:date
 })
 .eq("id",prospectEnEdition)
 
-if(error){alert(error.message)}
+if(error){
+alert(error.message)
+return
+}
+
+await enregistrerInteraction(prospectEnEdition,note)
+
+alert("Prospect modifié")
 
 }else{
 
-const {error}=await supabaseClient
+const {data,error}=await supabaseClient
 .from("contacts")
 .insert([{
-nom:nom,
-telephone:telephone,
+nom,
+telephone,
 notes:note,
-pipeline:pipeline,
-etape:etape,
+pipeline,
+etape,
 action_prochaine:action,
 date_rappel:date
 }])
+.select()
 
-if(error){alert(error.message)}
+if(error){
+alert(error.message)
+return
+}
+
+await enregistrerInteraction(data[0].id,note)
+
+alert("Prospect enregistré")
 
 }
 
@@ -186,27 +290,31 @@ chargerProspects()
 
 }
 
+
 async function chargerProspects(){
 
 const {data,error}=await supabaseClient
 .from("contacts")
 .select("*")
 
-if(error){console.log(error);return}
+if(error){
+console.log(error)
+return
+}
 
 const zone=document.getElementById("listeProspects")
 zone.innerHTML=""
 
 const aujourd=new Date().toISOString().split('T')[0]
 
-data.forEach(p=>{
+data.forEach(prospect=>{
 
 let classe="futur"
 
-if(p.date_rappel){
+if(prospect.date_rappel){
 
-if(p.date_rappel<aujourd){classe="retard"}
-else if(p.date_rappel===aujourd){classe="aujourdhui"}
+if(prospect.date_rappel<aujourd){classe="retard"}
+else if(prospect.date_rappel===aujourd){classe="aujourdhui"}
 
 }
 
@@ -214,19 +322,31 @@ zone.innerHTML+=`
 
 <div class="carte ${classe}">
 
-<strong>${p.nom}</strong><br>
+<strong>${prospect.nom}</strong><br>
 
-📞 ${p.telephone}<br>
+📞 ${prospect.telephone}<br>
 
-Pipeline : ${p.pipeline || ""}<br>
+Pipeline : ${prospect.pipeline || ""}<br>
 
-Etape : ${p.etape || ""}<br>
+Etape : ${prospect.etape || ""}<br>
 
-Action : ${p.action_prochaine || ""}<br>
+Action : ${prospect.action_prochaine || ""}<br>
 
-📅 Rappel : ${p.date_rappel || ""}<br>
+📅 Rappel : ${prospect.date_rappel || ""}<br>
 
-${p.notes || ""}
+${prospect.notes || ""}
+
+<br><br>
+
+<button onclick="modifierProspect('${prospect.id}')">Modifier</button>
+
+<button onclick="actionFaite('${prospect.id}')">Action faite</button>
+
+<button onclick="voirHistorique('${prospect.id}','${prospect.nom}')">Historique</button>
+
+<a href="https://wa.me/${prospect.telephone}" target="_blank">
+<button style="background:#25D366">WhatsApp</button>
+</a>
 
 </div>
 
@@ -235,6 +355,84 @@ ${p.notes || ""}
 })
 
 }
+
+
+async function voirHistorique(id,nom){
+
+const {data}=await supabaseClient
+.from("interactions")
+.select("*")
+.eq("contact_id",id)
+.order("created_at",{ascending:false})
+
+let html=<div class="carte"><h2>Historique ${nom}</h2>
+
+if(data.length===0){
+html+=<p>Aucune interaction enregistrée</p>
+}
+
+data.forEach(i=>{
+
+const date=new Date(i.created_at).toLocaleDateString()
+
+html+=<div class="interaction">${date} — ${i.note}</div>
+
+})
+
+html+=</div>
+
+document.getElementById("historique").innerHTML=html
+
+window.scrollTo(0,0)
+
+}
+
+
+async function modifierProspect(id){
+
+const {data}=await supabaseClient
+.from("contacts")
+.select("*")
+.eq("id",id)
+.single()
+
+prospectEnEdition=id
+
+document.getElementById("formulaire").style.display="block"
+
+document.getElementById("nom").value=data.nom
+document.getElementById("telephone").value=data.telephone
+document.getElementById("note").value=data.notes || ""
+document.getElementById("pipeline").value=data.pipeline || "business"
+document.getElementById("etape").value=data.etape || "prospection"
+document.getElementById("action_prochaine").value=data.action_prochaine || ""
+document.getElementById("date_rappel").value=data.date_rappel || ""
+
+}
+
+
+async function actionFaite(id){
+
+const nouvelleDate=new Date()
+
+nouvelleDate.setDate(nouvelleDate.getDate()+3)
+
+const date=nouvelleDate.toISOString().split('T')[0]
+
+await supabaseClient
+.from("contacts")
+.update({
+action_prochaine:"Relancer",
+date_rappel:date
+})
+.eq("id",id)
+
+await enregistrerInteraction(id,"Action faite - relance programmée")
+
+chargerProspects()
+
+}
+
 
 async function voirRappels(){
 
@@ -245,20 +443,33 @@ const {data,error}=await supabaseClient
 .select("*")
 .lte("date_rappel",aujourd)
 
-if(error){console.log(error);return}
+if(error){
+console.log(error)
+return
+}
 
 const zone=document.getElementById("listeProspects")
 zone.innerHTML=""
 
 data.forEach(p=>{
 
+let classe="retard"
+
+if(p.date_rappel===aujourd){
+classe="aujourdhui"
+}
+
 zone.innerHTML+=`
 
-<div class="carte">
+<div class="carte ${classe}">
 
 <strong>${p.nom}</strong><br>
 
 📞 ${p.telephone}<br>
+
+Pipeline : ${p.pipeline}<br>
+
+Etape : ${p.etape}<br>
 
 Action : ${p.action_prochaine}<br>
 
