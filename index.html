@@ -64,11 +64,13 @@ border:none;
 <h1>3% CRM par Ronald</h1>
 
 <div class="carte">
+
 <p>CRM intelligent de prospection</p>
 
 <button onclick="ouvrirFormulaire()">Ajouter prospect</button>
 <button onclick="chargerProspects()">Tous les prospects</button>
 <button onclick="voirRappels()">Rappels du jour</button>
+
 </div>
 
 
@@ -118,7 +120,6 @@ border:none;
 
 
 <div id="historique"></div>
-
 
 <h2>Prospects</h2>
 <div id="listeProspects"></div>
@@ -218,6 +219,7 @@ const action=document.getElementById("action_prochaine").value
 let date=document.getElementById("date_rappel").value
 if(!date){date=null}
 
+
 if(prospectEnEdition){
 
 const {error}=await supabaseClient
@@ -233,7 +235,10 @@ date_rappel:date
 })
 .eq("id",prospectEnEdition)
 
-if(error){alert(error.message);return}
+if(error){
+alert(error.message)
+return
+}
 
 await enregistrerInteraction(prospectEnEdition,note)
 
@@ -252,9 +257,14 @@ date_rappel:date
 }])
 .select()
 
-if(error){alert(error.message);return}
+if(error){
+alert(error.message)
+return
+}
 
-await enregistrerInteraction(data[0].id,note)
+const id=data[0].id
+
+await enregistrerInteraction(id,note)
 
 }
 
@@ -304,9 +314,7 @@ ${p.notes || ""}
 <br><br>
 
 <button onclick="modifierProspect('${p.id}')">Modifier</button>
-
 <button onclick="actionFaite('${p.id}')">Action faite</button>
-
 <button onclick="voirHistorique('${p.id}','${p.nom}')">Historique</button>
 
 <a href="https://wa.me/${p.telephone}" target="_blank">
@@ -331,10 +339,6 @@ const {data}=await supabaseClient
 .order("created_at",{ascending:false})
 
 let html=<div class="carte"><h2>Historique ${nom}</h2>
-
-if(data.length===0){
-html+=<p>Aucune interaction enregistrée</p>
-}
 
 data.forEach(i=>{
 
