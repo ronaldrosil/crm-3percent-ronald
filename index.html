@@ -34,21 +34,19 @@ background:#1e293b;
 padding:20px;
 border-radius:10px;
 margin-top:15px;
+cursor:pointer;
 }
 
-.retard{
-border-left:8px solid red;
-}
-
-.aujourdhui{
-border-left:8px solid orange;
-}
-
-.futur{
-border-left:8px solid green;
-}
+.retard{border-left:8px solid red;}
+.aujourdhui{border-left:8px solid orange;}
+.futur{border-left:8px solid green;}
 
 #formulaire{
+display:none;
+margin-top:20px;
+}
+
+#fiche{
 display:none;
 margin-top:20px;
 }
@@ -59,6 +57,14 @@ padding:10px;
 margin:8px;
 border-radius:6px;
 border:none;
+}
+
+.interaction{
+background:#0f172a;
+padding:10px;
+border-radius:6px;
+margin-top:6px;
+font-size:14px;
 }
 
 </style>
@@ -73,9 +79,7 @@ border:none;
 <p>CRM intelligent de prospection</p>
 
 <button onclick="ouvrirFormulaire()">Ajouter prospect</button>
-
 <button onclick="chargerProspects()">Tous les prospects</button>
-
 <button onclick="voirRappels()">Rappels du jour</button>
 
 </div>
@@ -85,7 +89,6 @@ border:none;
 <h2>Prospect</h2>
 
 <input id="nom" placeholder="Nom"><br>
-
 <input id="telephone" placeholder="Téléphone"><br>
 
 <textarea id="note" placeholder="Note"></textarea><br>
@@ -119,15 +122,15 @@ border:none;
 <br>
 
 <input id="action_prochaine" placeholder="Prochaine action"><br>
-
 <input type="date" id="date_rappel"><br>
 
 <button onclick="enregistrerProspect()">Enregistrer</button>
 
 </div>
 
-<h2>Prospects</h2>
+<div id="fiche"></div>
 
+<h2>Prospects</h2>
 <div id="listeProspects"></div>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -210,58 +213,45 @@ const etape=document.getElementById("etape").value
 const action=document.getElementById("action_prochaine").value
 
 let date=document.getElementById("date_rappel").value
-
-if(!date){
-date=null
-}
+if(!date){date=null}
 
 if(prospectEnEdition){
 
 const {error}=await supabaseClient
 .from("contacts")
 .update({
-nom:nom,
-telephone:telephone,
+nom,
+telephone,
 notes:note,
-pipeline:pipeline,
-etape:etape,
+pipeline,
+etape,
 action_prochaine:action,
 date_rappel:date
 })
 .eq("id",prospectEnEdition)
 
-if(error){
-alert(error.message)
-return
-}
+if(error){alert(error.message);return}
 
 await enregistrerInteraction(prospectEnEdition,note)
-
-alert("Prospect modifié")
 
 }else{
 
 const {data,error}=await supabaseClient
 .from("contacts")
 .insert([{
-nom:nom,
-telephone:telephone,
+nom,
+telephone,
 notes:note,
-pipeline:pipeline,
-etape:etape,
+pipeline,
+etape,
 action_prochaine:action,
 date_rappel:date
 }])
 .select()
 
-if(error){
-alert(error.message)
-return
-}
+if(error){alert(error.message);return}
 
 await enregistrerInteraction(data[0].id,note)
-
-alert("Prospect enregistré")
 
 }
 
@@ -287,10 +277,7 @@ const {data,error}=await supabaseClient
 .from("contacts")
 .select("*")
 
-if(error){
-console.log(error)
-return
-}
+if(error){console.log(error);return}
 
 const zone=document.getElementById("listeProspects")
 zone.innerHTML=""
@@ -303,18 +290,14 @@ let classe="futur"
 
 if(prospect.date_rappel){
 
-if(prospect.date_rappel<aujourd){
-classe="retard"
-}
-else if(prospect.date_rappel===aujourd){
-classe="aujourdhui"
-}
+if(prospect.date_rappel<aujourd){classe="retard"}
+else if(prospect.date_rappel===aujourd){classe="aujourdhui"}
 
 }
 
 zone.innerHTML+=`
 
-<div class="carte ${classe}">
+<div class="carte ${classe}" onclick="ouvrirFiche('${prospect.id}')">
 
 <strong>${prospect.nom}</strong><br>
 
@@ -332,11 +315,11 @@ ${prospect.notes || ""}
 
 <br><br>
 
-<button onclick="modifierProspect('${prospect.id}')">Modifier</button>
+<button onclick="event.stopPropagation();modifierProspect('${prospect.id}')">Modifier</button>
 
-<button onclick="actionFaite('${prospect.id}')">Action faite</button>
+<button onclick="event.stopPropagation();actionFaite('${prospect.id}')">Action faite</button>
 
-<a href="https://wa.me/${prospect.telephone}" target="_blank">
+<a onclick="event.stopPropagation();" href="https://wa.me/${prospect.telephone}" target="_blank">
 <button style="background:#25D366">WhatsApp</button>
 </a>
 
@@ -348,18 +331,58 @@ ${prospect.notes || ""}
 
 }
 
-async function modifierProspect(id){
+async function ouvrirFiche(id){
 
-const {data,error}=await supabaseClient
+const {data:prospect}=await supabaseClient
 .from("contacts")
 .select("*")
 .eq("id",id)
 .single()
 
-if(error){
-alert("Erreur chargement")
-return
+const {data:interactions}=await supabaseClient
+.from("interactions")
+.select("*")
+.eq("contact_id",id)
+.order("date_interaction",{ascending:false})
+
+let html=`
+
+<div class="carte">
+
+<h2>${prospect.nom}</h2>
+
+📞 ${prospect.telephone}<br>
+Pipeline : ${prospect.pipeline}<br>
+Etape : ${prospect.etape}<br>
+
+<h3>Historique</h3>
+
+`
+
+interactions.forEach(i=>{
+
+const date=new Date(i.date_interaction).toLocaleDateString()
+
+html+=<div class="interaction">${date} — ${i.note}</div>
+
+})
+
+html+=</div>
+
+document.getElementById("fiche").innerHTML=html
+document.getElementById("fiche").style.display="block"
+
+window.scrollTo(0,0)
+
 }
+
+async function modifierProspect(id){
+
+const {data}=await supabaseClient
+.from("contacts")
+.select("*")
+.eq("id",id)
+.single()
 
 prospectEnEdition=id
 
@@ -378,12 +401,11 @@ document.getElementById("date_rappel").value=data.date_rappel || ""
 async function actionFaite(id){
 
 const nouvelleDate=new Date()
-
 nouvelleDate.setDate(nouvelleDate.getDate()+3)
 
 const date=nouvelleDate.toISOString().split('T')[0]
 
-const {error}=await supabaseClient
+await supabaseClient
 .from("contacts")
 .update({
 action_prochaine:"Relancer",
@@ -391,17 +413,9 @@ date_rappel:date
 })
 .eq("id",id)
 
-if(error){
-alert(error.message)
-}else{
-
 await enregistrerInteraction(id,"Action faite - relance programmée")
 
-alert("Relance programmée")
-
 chargerProspects()
-
-}
 
 }
 
@@ -409,41 +423,25 @@ async function voirRappels(){
 
 const aujourd=new Date().toISOString().split('T')[0]
 
-const {data,error}=await supabaseClient
+const {data}=await supabaseClient
 .from("contacts")
 .select("*")
 .eq("date_rappel",aujourd)
 
-if(error){
-console.log(error)
-return
-}
-
 const zone=document.getElementById("listeProspects")
-
 zone.innerHTML=""
 
-data.forEach(prospect=>{
+data.forEach(p=>{
 
 zone.innerHTML+=`
 
 <div class="carte aujourdhui">
 
-<strong>${prospect.nom}</strong><br>
-
-📞 ${prospect.telephone}<br>
-
-Pipeline : ${prospect.pipeline || ""}<br>
-
-Etape : ${prospect.etape || ""}<br>
-
-Action : ${prospect.action_prochaine || ""}<br>
-
-📅 Rappel : ${prospect.date_rappel || ""}
-
-<a href="https://wa.me/${prospect.telephone}" target="_blank">
-<button style="background:#25D366">WhatsApp</button>
-</a>
+<strong>${p.nom}</strong><br>
+📞 ${p.telephone}<br>
+Pipeline : ${p.pipeline}<br>
+Etape : ${p.etape}<br>
+Action : ${p.action_prochaine}<br>
 
 </div>
 
