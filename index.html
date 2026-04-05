@@ -210,7 +210,7 @@ const note=document.getElementById("note").value
 const pipeline=document.getElementById("pipeline").value
 const etape=document.getElementById("etape").value
 const action=document.getElementById("action_prochaine").value
-const date=document.getElementById("date_rappel").value || null
+const date=document.getElementById("date_rappel").value
 
 if(prospectEnEdition){
 
@@ -318,22 +318,15 @@ ${prospect.notes||""}
 
 <button onclick="actionFaite('${prospect.id}')">Action faite</button>
 
-<button onclick="envoyerWhatsApp('${prospect.telephone}')"
-style="background:#25D366">WhatsApp</button>
+<a href="https://wa.me/${prospect.telephone}" target="_blank">
+<button style="background:#25D366">WhatsApp</button>
+</a>
 
 </div>
 
 `
 
 })
-
-}
-
-function envoyerWhatsApp(numero){
-
-numero=numero.replace(/\D/g,'')
-
-window.open(https://wa.me/${numero},'_blank')
 
 }
 
@@ -424,8 +417,9 @@ Action : ${prospect.action_prochaine||""}<br>
 
 📅 Rappel : ${prospect.date_rappel||""}<br>
 
-<button onclick="envoyerWhatsApp('${prospect.telephone}')"
-style="background:#25D366">WhatsApp</button>
+<a href="https://wa.me/${prospect.telephone}" target="_blank">
+<button style="background:#25D366">WhatsApp</button>
+</a>
 
 </div>
 
