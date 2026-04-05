@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
-
 <meta charset="UTF-8">
 <title>3% CRM by Ronald</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -64,7 +62,6 @@ border:none;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -88,19 +85,15 @@ border:none;
 <h2>Prospect</h2>
 
 <input id="nom" placeholder="Nom">
-
 <br>
 
 <input id="telephone" placeholder="Téléphone">
-
 <br>
 
 <textarea id="note" placeholder="Note"></textarea>
-
 <br>
 
 <button type="button" onclick="dicterNote()">🎤 Dicter</button>
-
 <br>
 
 <label>Pipeline</label>
@@ -128,11 +121,9 @@ border:none;
 <br>
 
 <input id="action_prochaine" placeholder="Prochaine action">
-
 <br>
 
 <input type="date" id="date_rappel">
-
 <br>
 
 <button onclick="enregistrerProspect()">Enregistrer</button>
@@ -154,6 +145,28 @@ const supabaseClient=supabase.createClient(supabaseUrl,supabaseKey)
 
 let prospectEnEdition=null
 
+
+
+async function enregistrerInteraction(contactId, texte){
+
+const { error } = await supabaseClient
+.from("interactions")
+.insert([
+{
+contact_id: contactId,
+note: texte,
+date_interaction: new Date().toISOString()
+}
+])
+
+if(error){
+console.log("Erreur interaction :", error)
+}
+
+}
+
+
+
 function ouvrirFormulaire(){
 
 document.getElementById("formulaire").style.display="block"
@@ -170,6 +183,8 @@ prospectEnEdition=null
 
 }
 
+
+
 function dicterNote(){
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -182,8 +197,6 @@ return
 const recognition = new SpeechRecognition()
 
 recognition.lang="fr-FR"
-recognition.interimResults=false
-
 recognition.start()
 
 recognition.onresult=function(event){
@@ -196,11 +209,9 @@ zoneNote.value=zoneNote.value+" "+texte
 
 }
 
-recognition.onerror=function(){
-alert("Erreur dictée vocale")
 }
 
-}
+
 
 async function enregistrerProspect(){
 
@@ -211,6 +222,7 @@ const pipeline=document.getElementById("pipeline").value
 const etape=document.getElementById("etape").value
 const action=document.getElementById("action_prochaine").value
 const date=document.getElementById("date_rappel").value
+
 
 if(prospectEnEdition){
 
@@ -227,18 +239,22 @@ date_rappel:date
 })
 .eq("id",prospectEnEdition)
 
-prospectEnEdition=null
+if(!error){
 
-if(error){
-alert(error.message)
-}else{
-alert("Prospect modifié")
-chargerProspects()
+await enregistrerInteraction(
+prospectEnEdition,
+"Prospect modifié"
+)
+
 }
 
+prospectEnEdition=null
+
+chargerProspects()
+
 }else{
 
-const {error}=await supabaseClient
+const {data,error}=await supabaseClient
 .from("contacts")
 .insert([
 {
@@ -251,17 +267,24 @@ action_prochaine:action,
 date_rappel:date
 }
 ])
+.select()
 
-if(error){
-alert(error.message)
-}else{
-alert("Prospect enregistré")
+if(!error){
+
+await enregistrerInteraction(
+data[0].id,
+"Prospect créé"
+)
+
+}
+
 chargerProspects()
-}
 
 }
 
 }
+
+
 
 async function chargerProspects(){
 
@@ -302,13 +325,13 @@ zone.innerHTML+=`
 
 📞 ${prospect.telephone}<br>
 
-Pipeline : ${prospect.pipeline||"non défini"}<br>
+Pipeline : ${prospect.pipeline||""}<br>
 
-Étape : ${prospect.etape||"non définie"}<br>
+Étape : ${prospect.etape||""}<br>
 
-Action : ${prospect.action_prochaine||"non définie"}<br>
+Action : ${prospect.action_prochaine||""}<br>
 
-📅 Rappel : ${prospect.date_rappel||"non défini"}<br>
+📅 Rappel : ${prospect.date_rappel||""}<br>
 
 ${prospect.notes||""}
 
@@ -329,6 +352,8 @@ ${prospect.notes||""}
 })
 
 }
+
+
 
 async function modifierProspect(id){
 
@@ -357,6 +382,8 @@ document.getElementById("date_rappel").value=data.date_rappel||""
 
 }
 
+
+
 async function actionFaite(id){
 
 const nouvelleDate=new Date()
@@ -373,14 +400,20 @@ date_rappel:date
 })
 .eq("id",id)
 
-if(error){
-alert(error.message)
-}else{
-alert("Action enregistrée, relance programmée")
-chargerProspects()
-}
+if(!error){
+
+await enregistrerInteraction(
+id,
+"Action effectuée - relance programmée"
+)
 
 }
+
+chargerProspects()
+
+}
+
+
 
 async function voirRappels(){
 
@@ -415,11 +448,7 @@ Pipeline : ${prospect.pipeline||""}<br>
 
 Action : ${prospect.action_prochaine||""}<br>
 
-📅 Rappel : ${prospect.date_rappel||""}<br>
-
-<a href="https://wa.me/${prospect.telephone}" target="_blank">
-<button style="background:#25D366">WhatsApp</button>
-</a>
+📅 Rappel : ${prospect.date_rappel||""}
 
 </div>
 
