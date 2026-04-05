@@ -398,19 +398,30 @@ async function voirRappels(){
 
 const aujourd=new Date().toISOString().split('T')[0]
 
-const {data}=await supabaseClient
+const {data,error}=await supabaseClient
 .from("contacts")
 .select("*")
-.eq("date_rappel",aujourd)
+.lte("date_rappel",aujourd)
+
+if(error){
+console.log(error)
+return
+}
 
 const zone=document.getElementById("listeProspects")
 zone.innerHTML=""
 
 data.forEach(p=>{
 
+let classe="retard"
+
+if(p.date_rappel===aujourd){
+classe="aujourdhui"
+}
+
 zone.innerHTML+=`
 
-<div class="carte aujourdhui">
+<div class="carte ${classe}">
 
 <strong>${p.nom}</strong><br>
 
@@ -421,6 +432,8 @@ Pipeline : ${p.pipeline}<br>
 Etape : ${p.etape}<br>
 
 Action : ${p.action_prochaine}<br>
+
+📅 Rappel : ${p.date_rappel}
 
 </div>
 
