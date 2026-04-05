@@ -32,7 +32,6 @@ background:#1e293b;
 padding:20px;
 border-radius:10px;
 margin-top:15px;
-cursor:pointer;
 }
 
 .retard{border-left:8px solid red;}
@@ -44,9 +43,16 @@ display:none;
 margin-top:20px;
 }
 
-#fiche{
+#historique{
 display:none;
 margin-top:20px;
+}
+
+.interaction{
+background:#0f172a;
+padding:8px;
+border-radius:6px;
+margin-top:5px;
 }
 
 input,textarea,select{
@@ -55,14 +61,6 @@ padding:10px;
 margin:8px;
 border-radius:6px;
 border:none;
-}
-
-.interaction{
-background:#0f172a;
-padding:8px;
-border-radius:6px;
-margin-top:6px;
-font-size:14px;
 }
 
 </style>
@@ -132,7 +130,7 @@ font-size:14px;
 </div>
 
 
-<div id="fiche"></div>
+<div id="historique"></div>
 
 
 <h2>Prospects</h2>
@@ -298,42 +296,44 @@ zone.innerHTML=""
 
 const aujourd=new Date().toISOString().split('T')[0]
 
-data.forEach(prospect=>{
+data.forEach(p=>{
 
 let classe="futur"
 
-if(prospect.date_rappel){
+if(p.date_rappel){
 
-if(prospect.date_rappel<aujourd){classe="retard"}
-else if(prospect.date_rappel===aujourd){classe="aujourdhui"}
+if(p.date_rappel<aujourd){classe="retard"}
+else if(p.date_rappel===aujourd){classe="aujourdhui"}
 
 }
 
 zone.innerHTML+=`
 
-<div class="carte ${classe}" onclick="ouvrirFiche('${prospect.id}')">
+<div class="carte ${classe}">
 
-<strong>${prospect.nom}</strong><br>
+<strong>${p.nom}</strong><br>
 
-📞 ${prospect.telephone}<br>
+📞 ${p.telephone}<br>
 
-Pipeline : ${prospect.pipeline || ""}<br>
+Pipeline : ${p.pipeline}<br>
 
-Etape : ${prospect.etape || ""}<br>
+Etape : ${p.etape}<br>
 
-Action : ${prospect.action_prochaine || ""}<br>
+Action : ${p.action_prochaine}<br>
 
-📅 Rappel : ${prospect.date_rappel || ""}<br>
+📅 Rappel : ${p.date_rappel || ""}<br>
 
-${prospect.notes || ""}
+${p.notes || ""}
 
 <br><br>
 
-<button onclick="event.stopPropagation();modifierProspect('${prospect.id}')">Modifier</button>
+<button onclick="modifierProspect('${p.id}')">Modifier</button>
 
-<button onclick="event.stopPropagation();actionFaite('${prospect.id}')">Action faite</button>
+<button onclick="actionFaite('${p.id}')">Action faite</button>
 
-<a onclick="event.stopPropagation();" href="https://wa.me/${prospect.telephone}" target="_blank">
+<button onclick="voirHistorique('${p.id}','${p.nom}')">Historique</button>
+
+<a href="https://wa.me/${p.telephone}" target="_blank">
 <button style="background:#25D366">WhatsApp</button>
 </a>
 
@@ -347,32 +347,17 @@ ${prospect.notes || ""}
 
 
 
-async function ouvrirFiche(id){
+async function voirHistorique(id,nom){
 
-const {data:prospect}=await supabaseClient
-.from("contacts")
-.select("*")
-.eq("id",id)
-.single()
-
-const {data:interactions}=await supabaseClient
+const {data}=await supabaseClient
 .from("interactions")
 .select("*")
 .eq("contact_id",id)
 .order("date_interaction",{ascending:false})
 
-let html=`<div class="carte">
+let html=<div class="carte"><h2>Historique ${nom}</h2>
 
-<h2>${prospect.nom}</h2>
-
-📞 ${prospect.telephone}<br>
-Pipeline : ${prospect.pipeline}<br>
-Etape : ${prospect.etape}<br>
-
-<h3>Historique</h3>
-`
-
-interactions.forEach(i=>{
+data.forEach(i=>{
 
 const date=new Date(i.date_interaction).toLocaleDateString()
 
@@ -382,8 +367,8 @@ html+=<div class="interaction">${date} — ${i.note}</div>
 
 html+=</div>
 
-document.getElementById("fiche").innerHTML=html
-document.getElementById("fiche").style.display="block"
+document.getElementById("historique").innerHTML=html
+document.getElementById("historique").style.display="block"
 
 window.scrollTo(0,0)
 
@@ -453,23 +438,13 @@ zone.innerHTML=""
 
 data.forEach(p=>{
 
-let classe="retard"
-if(p.date_rappel===aujourd){classe="aujourdhui"}
-
 zone.innerHTML+=`
 
-<div class="carte ${classe}">
+<div class="carte">
 
 <strong>${p.nom}</strong><br>
-
 📞 ${p.telephone}<br>
-
-Pipeline : ${p.pipeline}<br>
-
-Etape : ${p.etape}<br>
-
 Action : ${p.action_prochaine}<br>
-
 📅 Rappel : ${p.date_rappel}
 
 </div>
